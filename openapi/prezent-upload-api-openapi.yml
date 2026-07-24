@@ -1,0 +1,678 @@
+openapi: 3.1.0
+info:
+  title: Prezent Platform Audiences Upload API
+  version: 1.0.0
+  summary: Agent-ready REST API for Prezent's content-generation and template-conversion services.
+  description: "The Prezent Platform API exposes Prezent's AutoGenerator, Template Converter,\nAudiences, Themes, and File-upload services as a uniform JSON HTTP API.\n\nThis contract describes the **target agent-ready shape** of the API: every\ndocumented endpoint returns a uniform success envelope `{ \"success\": true,\n\"data\": { ... } }` or a uniform error envelope `{ \"success\": false,\n\"data\": null, \"error\": { \"code\": \"...\", \"message\": \"...\", \"details\": { ... } } }`.\nError codes are drawn from a stable catalog (see `ErrorCode`). The contract\nis additive: handlers may continue to emit legacy keys alongside the\ndocumented ones for backwards compatibility, so schemas explicitly allow\nadditional properties at the envelope and data levels.\n\nSeveral endpoints kick off long-running background work and return a\n`callback_id` that the client polls against a corresponding status\nendpoint. The canonical async polling endpoint for the Template Converter\nfamily is **`GET /api/v2/template-converter/status/{callback_id}`** which\nuses strict HTTP-status mapping (200 only on workflow success, 4xx/5xx on\nworkflow failure). The v1 polling endpoint at\n`/api/v1/template-converter/status/{callbackId}` (and its REST alias\n`GET /api/v1/template-conversions/{callback_id}`) continues to be served\nwith legacy semantics (HTTP 200 with `status` field) and is intentionally\nomitted from this documentation.\n\n**REST resource aliases (v1.1).** AutoGenerator and Template Converter\nendpoints are documented here under their REST-resource path names\n(`/api/v1/autogenerations`, `/api/v1/template-conversions`). The legacy\nRPC-style paths under `/api/v1/autogenerator/*` and\n`/api/v1/template-converter/*` continue to be served indefinitely; they\nreturn a `Deprecation: true` header pointing to the successor alias.\n\n**Conventions that apply to every endpoint** (full reference in the\ncompanion guides on this documentation site):\n\n- **Auth:** API key as a Bearer token — `Authorization: Bearer <key>`.\n  Each key is scoped to an allow-list of endpoint paths; an out-of-scope\n  call returns `404 ENDPOINT_NOT_FOUND`.\n- **Rate limits:** gateway throttle 10 req/s sustained, 5 burst,\n  1,000 req/day per key; per-company per-category 60-second sliding\n  windows; annual quotas (50,000 slide generations/yr, 1,000,000\n  downloads/yr). Limit breaches return `429` with `error.code`\n  `TOO_MANY_REQUESTS` (gateway), `RATE_LIMIT_EXCEEDED` (per-category),\n  or `USAGE_LIMIT_EXCEEDED` (annual).\n- **Errors:** every error uses the `{ success:false, data:null, error:{\n  code, message, details } }` envelope with stable, documented `code`\n  values.\n- **Idempotency & pagination:** mutating requests accept an\n  `Idempotency-Key`; list endpoints accept opt-in `limit`/`cursor`\n  paging.\n\n**Building with an AI agent?** Prezent ships a first-class Model Context\nProtocol (MCP) server. The hosted endpoint is\n`https://mcp.myprezent.com/mcp` (OAuth 2.1, works with Claude.ai Custom\nConnectors); a local stdio server is published on PyPI as\n`prezent-mcp-server` and plugs into Claude Desktop, Cursor, Cline,\nContinue, and Zed. The MCP tools wrap the same REST endpoints\ndescribed here.\n\n**Official SDKs.** Typed REST clients are published for Python and\nTypeScript (`prezent-sdk`) — generated from and versioned against this\nspec. For other languages, generate a client from this document.\n\n**Out of scope of this document:** SCIM endpoints under `/api/v1/scim/*`.\nThose endpoints conform to RFC 7644 (SCIM 2.0) and follow a different\nenvelope (`schemas`, `Resources`, `totalResults`, etc.). They are\ndocumented separately at /docs/scim-user-management.\n"
+  x-out-of-scope-note: 'SCIM endpoints (`/api/v1/scim/*`) are NOT included in this spec. They
+
+    follow RFC 7644 (SCIM 2.0) and are documented in a separate document at
+
+    /docs/scim-user-management.
+
+    '
+  contact:
+    name: Prezent API Support
+    email: support@prezent.ai
+    url: https://prezent.ai
+  license:
+    name: Proprietary - Prezent, Inc.
+    url: https://prezent.ai/terms
+servers:
+- url: https://api.prezent.ai
+  description: Production (canonical)
+- url: https://uatstage-api.myprezent.com
+  description: UAT (user acceptance testing)
+- url: https://devstage-api.myprezent.com
+  description: Development
+security:
+- BearerAuth: []
+tags:
+- name: Upload
+  description: Validate, preprocess, and upload supporting files (PowerPoint, PDF, images, etc.).
+paths:
+  /api/v1/upload:
+    post:
+      tags:
+      - Upload
+      summary: Upload a single file (base64-encoded)
+      description: 'Accepts a single file as a base64 string or `data:` URL in the
+
+        request body. The response contains the uploaded file''s id, S3
+
+        path, and metadata.
+
+        '
+      operationId: uploadFile
+      x-rate-limit-category: general
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadFileRequest'
+      responses:
+        '200':
+          description: File uploaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadFileResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedFileType'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/preprocess:
+    post:
+      tags:
+      - Upload
+      summary: Preprocess a file in chunks
+      description: 'Accepts one chunk of a multi-chunk file upload. The caller drives
+
+        chunking via `chunkIndex` and `totalChunks`; chunks for the same
+
+        upload share a `requestIdentifier`. Once all chunks for a
+
+        `requestIdentifier` have arrived the file is assembled and made
+
+        available to downstream operations.
+
+        '
+      operationId: preprocessFile
+      x-rate-limit-category: general
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreprocessFileRequest'
+      responses:
+        '200':
+          description: Chunk received.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreprocessFileResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedFileType'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/validate:
+    post:
+      tags:
+      - Upload
+      summary: Validate uploaded files and/or web links
+      description: 'Validates a set of previously uploaded files (referenced by
+
+        `fileIdentifiers`) and/or a list of web links. At least one of
+
+        `fileIdentifiers` or `webLinks` must be non-empty.
+
+        '
+      operationId: validateFiles
+      x-rate-limit-category: general
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateFilesRequest'
+      responses:
+        '200':
+          description: Validation result returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateFilesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '415':
+          $ref: '#/components/responses/UnsupportedFileType'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+components:
+  schemas:
+    UploadFileResponse:
+      description: Response body for `POST /api/v1/upload`.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            required:
+            - file
+            properties:
+              file:
+                type: object
+                required:
+                - file_id
+                - file_name
+                - file_type
+                - s3_path
+                - s3_bucket
+                properties:
+                  file_id:
+                    type: string
+                    description: Internal id of the uploaded file.
+                  file_name:
+                    type: string
+                    description: Original filename.
+                  file_type:
+                    type: string
+                    description: MIME type / detected file type.
+                  s3_path:
+                    type: string
+                    description: S3 key of the uploaded file.
+                  s3_bucket:
+                    type: string
+                    description: S3 bucket of the uploaded file.
+                additionalProperties: true
+              message:
+                type: string
+                description: Human-readable confirmation.
+            additionalProperties: true
+    PreprocessFileRequest:
+      type: object
+      description: Request body for `POST /api/v1/preprocess` and `POST /api/v1/template-converter/preprocess`.
+      required:
+      - fileContent
+      - fileName
+      - chunkIndex
+      - totalChunks
+      - requestIdentifier
+      properties:
+        fileContent:
+          type: string
+          description: Chunk content as base64 / `data:` URL.
+        fileName:
+          type: string
+          description: Original filename including extension.
+        chunkIndex:
+          type: integer
+          minimum: 0
+          description: Zero-based index of this chunk.
+        totalChunks:
+          type: integer
+          minimum: 1
+          description: Total number of chunks for this upload.
+        requestIdentifier:
+          type: string
+          description: Caller-supplied identifier that groups chunks of the same upload.
+      additionalProperties: true
+    ValidateFilesResponse:
+      description: Response body for `POST /api/v1/validate`.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              files:
+                type: array
+                description: Per-file validation results.
+                items:
+                  type: object
+                  properties:
+                    uuid:
+                      type: string
+                      description: File uuid.
+                    file_name:
+                      type: string
+                      description: Original filename.
+                    valid:
+                      type: boolean
+                      description: Whether the file passed validation.
+                    reason:
+                      type: string
+                      description: Failure reason when `valid=false`.
+                  additionalProperties: true
+              web_links:
+                type: array
+                description: Per-link validation results.
+                items:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                      description: The link.
+                    valid:
+                      type: boolean
+                      description: Whether the link is reachable and ingestable.
+                    reason:
+                      type: string
+                      description: Failure reason when `valid=false`.
+                  additionalProperties: true
+              message:
+                type: string
+                description: Human-readable confirmation.
+            additionalProperties: true
+    UploadFileRequest:
+      type: object
+      description: Request body for `POST /api/v1/upload`.
+      required:
+      - fileContent
+      - fileName
+      properties:
+        fileContent:
+          type: string
+          description: File content as a base64 string or `data:` URL.
+        fileName:
+          type: string
+          description: Original filename including extension.
+      additionalProperties: true
+    ErrorCode:
+      type: string
+      description: 'Stable identifier for an error condition. Codes never change
+
+        meaning or HTTP status once published.
+
+        '
+      enum:
+      - INVALID_API_KEY
+      - EXPIRED_API_KEY
+      - UNAUTHORIZED
+      - FORBIDDEN
+      - ENDPOINT_NOT_FOUND
+      - RESOURCE_NOT_FOUND
+      - NOT_FOUND
+      - METHOD_NOT_ALLOWED
+      - UNSUPPORTED_FILE_TYPE
+      - INVALID_INPUT
+      - UNPROCESSABLE_ENTITY
+      - RATE_LIMIT_EXCEEDED
+      - USAGE_LIMIT_EXCEEDED
+      - TOO_MANY_REQUESTS
+      - THROTTLED
+      - BAD_REQUEST
+      - INVALID_JSON
+      - MISSING_REQUIRED_FIELD
+      - MISSING_QUERY_PARAM
+      - MISSING_CALLBACK_ID
+      - MISSING_SLIDES_ARRAY
+      - MISSING_PROMPT
+      - MISSING_TEMPLATE_ID
+      - MISSING_FILE_CONTENT
+      - MISSING_SHARE_DETAILS
+      - INVALID_TYPE
+      - INVALID_DATA
+      - INVALID_DATA_TYPE
+      - INVALID_PAYLOAD
+      - INVALID_REQUEST
+      - API_REQUEST_FAILED
+      - FILE_UPLOAD_FAILED
+      - MAX_RETRIES_EXCEEDED
+      - EXTERNAL_SERVICE_ERROR
+      - INTERNAL_SERVER_ERROR
+      - SERVICE_UNAVAILABLE
+      - GATEWAY_TIMEOUT
+    ValidateFilesRequest:
+      type: object
+      description: 'Request body for `POST /api/v1/validate`. At least one of
+
+        `fileIdentifiers` or `webLinks` must be non-empty.
+
+        '
+      properties:
+        fileIdentifiers:
+          type: object
+          description: Map of `uuid` → `fileName` for previously uploaded files.
+          additionalProperties:
+            type: string
+            description: Original filename for that uuid.
+        webLinks:
+          type: array
+          description: List of URLs to validate.
+          items:
+            type: string
+            format: uri
+      additionalProperties: true
+    ErrorEnvelope:
+      type: object
+      description: 'Standard error envelope returned by every documented endpoint
+
+        (both in-Lambda and gateway-level errors). Additional legacy
+
+        keys may appear alongside `success`/`data`/`error` for
+
+        backwards compatibility.
+
+        '
+      required:
+      - success
+      - data
+      - error
+      properties:
+        success:
+          type: boolean
+          const: false
+          description: Always `false` on error.
+        data:
+          type:
+          - object
+          - 'null'
+          description: Always `null` on error.
+        error:
+          type: object
+          required:
+          - code
+          - message
+          description: Error description.
+          properties:
+            code:
+              $ref: '#/components/schemas/ErrorCode'
+            message:
+              type: string
+              description: Human-readable error description (English).
+            details:
+              type: object
+              description: Optional structured details (validation failures, downstream-service info, etc.).
+              additionalProperties: true
+      additionalProperties: true
+    PreprocessFileResponse:
+      description: Response body for `POST /api/v1/preprocess` and `POST /api/v1/template-converter/preprocess`.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            required:
+            - request_identifier
+            - file_name
+            properties:
+              request_identifier:
+                type: string
+                description: The caller-supplied identifier.
+              file_name:
+                type: string
+                description: The filename that was processed.
+              message:
+                type: string
+                description: Human-readable confirmation.
+            additionalProperties: true
+    SuccessEnvelope:
+      type: object
+      description: 'Standard success envelope. Endpoint-specific schemas extend this
+
+        and constrain the `data` property to their concrete shape.
+
+        Additional legacy keys (`status`, `log`, …) may appear alongside
+
+        `success`/`data` for backwards compatibility, and some legacy
+
+        handlers omit `success`, so it is not marked required.
+
+        '
+      required:
+      - data
+      properties:
+        success:
+          type: boolean
+          description: '`true` on success (omitted by some legacy handlers).'
+        data:
+          type: object
+          description: Endpoint-specific payload.
+      additionalProperties: true
+  responses:
+    Forbidden:
+      description: Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: FORBIDDEN
+              message: Access to the resource is forbidden.
+              details: {}
+    RateLimited:
+      description: "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n"
+      headers:
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/XRateLimitLimit'
+        X-RateLimit-Remaining:
+          $ref: '#/components/headers/XRateLimitRemaining'
+        X-RateLimit-Reset:
+          $ref: '#/components/headers/XRateLimitReset'
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: RATE_LIMIT_EXCEEDED
+              message: Rate limit exceeded for this category. Try again later.
+              details:
+                category: auto_generator
+                retry_after_seconds: 12
+    ServiceUnavailable:
+      description: Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: SERVICE_UNAVAILABLE
+              message: Service is temporarily unavailable.
+              details: {}
+    Unauthorized:
+      description: 'Caller did not present a valid Bearer token, or the token has
+
+        expired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,
+
+        `EXPIRED_API_KEY`.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: INVALID_API_KEY
+              message: API key not found or not authorized.
+              details: {}
+    NotFound:
+      description: 'Requested endpoint or resource does not exist. `error.code` is
+
+        one of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: RESOURCE_NOT_FOUND
+              message: The requested resource was not found.
+              details: {}
+    GatewayTimeout:
+      description: A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: GATEWAY_TIMEOUT
+              message: Gateway timeout.
+              details: {}
+    InternalServerError:
+      description: Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: INTERNAL_SERVER_ERROR
+              message: An unexpected server error occurred.
+              details: {}
+    BadRequest:
+      description: Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: BAD_REQUEST
+              message: Bad request.
+              details: {}
+    UnprocessableEntity:
+      description: 'Request was well-formed but failed semantic validation.
+
+        `error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: INVALID_INPUT
+              message: Invalid input provided.
+              details: {}
+    UnsupportedFileType:
+      description: Uploaded file's extension or MIME type is not accepted. `error.code` is `UNSUPPORTED_FILE_TYPE`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: UNSUPPORTED_FILE_TYPE
+              message: Unsupported file type.
+              details: {}
+  headers:
+    XRateLimitReset:
+      description: Unix timestamp (seconds) when the current rate-limit window resets.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    XRateLimitLimit:
+      description: 'The configured request limit for the rate-limit category
+
+        (requests per 60-second window) that applied to this call.
+
+        The applicable category is the operation''s `x-rate-limit-category`.
+
+        Returned on every response (success and 429) so clients can
+
+        self-throttle. See the Rate limits guide for the default
+
+        per-category numbers.
+
+        '
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    RetryAfter:
+      description: Number of seconds the client should wait before retrying.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    XRateLimitRemaining:
+      description: 'Approximate number of requests remaining in the current
+
+        60-second window for this caller and category.
+
+        '
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: 'Bearer token authentication. Supply the API key issued by
+
+        Customer Success as `Authorization: Bearer <api_key>`. The API
+
+        does NOT accept the AWS `x-api-key` header. Keys may have an
+
+        expiry date; expired keys return `401 EXPIRED_API_KEY`. Keys are
+
+        scoped to specific paths; calling an unauthorised path returns
+
+        `404 ENDPOINT_NOT_FOUND`.
+
+        '

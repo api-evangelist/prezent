@@ -1,0 +1,1727 @@
+openapi: 3.1.0
+info:
+  title: Prezent Platform Audiences AutoGenerator API
+  version: 1.0.0
+  summary: Agent-ready REST API for Prezent's content-generation and template-conversion services.
+  description: "The Prezent Platform API exposes Prezent's AutoGenerator, Template Converter,\nAudiences, Themes, and File-upload services as a uniform JSON HTTP API.\n\nThis contract describes the **target agent-ready shape** of the API: every\ndocumented endpoint returns a uniform success envelope `{ \"success\": true,\n\"data\": { ... } }` or a uniform error envelope `{ \"success\": false,\n\"data\": null, \"error\": { \"code\": \"...\", \"message\": \"...\", \"details\": { ... } } }`.\nError codes are drawn from a stable catalog (see `ErrorCode`). The contract\nis additive: handlers may continue to emit legacy keys alongside the\ndocumented ones for backwards compatibility, so schemas explicitly allow\nadditional properties at the envelope and data levels.\n\nSeveral endpoints kick off long-running background work and return a\n`callback_id` that the client polls against a corresponding status\nendpoint. The canonical async polling endpoint for the Template Converter\nfamily is **`GET /api/v2/template-converter/status/{callback_id}`** which\nuses strict HTTP-status mapping (200 only on workflow success, 4xx/5xx on\nworkflow failure). The v1 polling endpoint at\n`/api/v1/template-converter/status/{callbackId}` (and its REST alias\n`GET /api/v1/template-conversions/{callback_id}`) continues to be served\nwith legacy semantics (HTTP 200 with `status` field) and is intentionally\nomitted from this documentation.\n\n**REST resource aliases (v1.1).** AutoGenerator and Template Converter\nendpoints are documented here under their REST-resource path names\n(`/api/v1/autogenerations`, `/api/v1/template-conversions`). The legacy\nRPC-style paths under `/api/v1/autogenerator/*` and\n`/api/v1/template-converter/*` continue to be served indefinitely; they\nreturn a `Deprecation: true` header pointing to the successor alias.\n\n**Conventions that apply to every endpoint** (full reference in the\ncompanion guides on this documentation site):\n\n- **Auth:** API key as a Bearer token — `Authorization: Bearer <key>`.\n  Each key is scoped to an allow-list of endpoint paths; an out-of-scope\n  call returns `404 ENDPOINT_NOT_FOUND`.\n- **Rate limits:** gateway throttle 10 req/s sustained, 5 burst,\n  1,000 req/day per key; per-company per-category 60-second sliding\n  windows; annual quotas (50,000 slide generations/yr, 1,000,000\n  downloads/yr). Limit breaches return `429` with `error.code`\n  `TOO_MANY_REQUESTS` (gateway), `RATE_LIMIT_EXCEEDED` (per-category),\n  or `USAGE_LIMIT_EXCEEDED` (annual).\n- **Errors:** every error uses the `{ success:false, data:null, error:{\n  code, message, details } }` envelope with stable, documented `code`\n  values.\n- **Idempotency & pagination:** mutating requests accept an\n  `Idempotency-Key`; list endpoints accept opt-in `limit`/`cursor`\n  paging.\n\n**Building with an AI agent?** Prezent ships a first-class Model Context\nProtocol (MCP) server. The hosted endpoint is\n`https://mcp.myprezent.com/mcp` (OAuth 2.1, works with Claude.ai Custom\nConnectors); a local stdio server is published on PyPI as\n`prezent-mcp-server` and plugs into Claude Desktop, Cursor, Cline,\nContinue, and Zed. The MCP tools wrap the same REST endpoints\ndescribed here.\n\n**Official SDKs.** Typed REST clients are published for Python and\nTypeScript (`prezent-sdk`) — generated from and versioned against this\nspec. For other languages, generate a client from this document.\n\n**Out of scope of this document:** SCIM endpoints under `/api/v1/scim/*`.\nThose endpoints conform to RFC 7644 (SCIM 2.0) and follow a different\nenvelope (`schemas`, `Resources`, `totalResults`, etc.). They are\ndocumented separately at /docs/scim-user-management.\n"
+  x-out-of-scope-note: 'SCIM endpoints (`/api/v1/scim/*`) are NOT included in this spec. They
+
+    follow RFC 7644 (SCIM 2.0) and are documented in a separate document at
+
+    /docs/scim-user-management.
+
+    '
+  contact:
+    name: Prezent API Support
+    email: support@prezent.ai
+    url: https://prezent.ai
+  license:
+    name: Proprietary - Prezent, Inc.
+    url: https://prezent.ai/terms
+servers:
+- url: https://api.prezent.ai
+  description: Production (canonical)
+- url: https://uatstage-api.myprezent.com
+  description: UAT (user acceptance testing)
+- url: https://devstage-api.myprezent.com
+  description: Development
+security:
+- BearerAuth: []
+tags:
+- name: AutoGenerator
+  description: Long-running and synchronous endpoints that generate and manipulate AI-authored presentations from prompts, files, and assets.
+paths:
+  /api/v1/autogenerations:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Create an AutoGenerator job
+      description: 'Kicks off a background pipeline that turns the supplied prompt,
+
+        context files, and assets into a Prezent presentation. Returns a
+
+        `callback_id` that the caller polls via
+
+        `GET /api/v1/autogenerations/{callback_id}` until `status` is
+
+        `success` or `failed`.
+
+        '
+      operationId: createAutogeneration
+      x-rate-limit-category: autogenerator
+      parameters:
+      - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorStartRequest'
+      responses:
+        '200':
+          description: Job accepted; client must poll for completion.
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorStartResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/IdempotencyConflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerations/{callback_id}:
+    get:
+      tags:
+      - AutoGenerator
+      summary: Read an AutoGenerator job
+      description: 'Returns the current state of a previously started AutoGenerator job.
+
+        The `status` field in the response data is one of
+
+        `in_progress`, `success`, or `failed`. Once `success`, the payload
+
+        also contains the generated slides, extracted images, theme/audience
+
+        metadata, and other context required to display or further edit
+
+        the deck.
+
+
+        For the same `callback_id`, polling after `status=success` returns
+
+        the same cached payload.
+
+        '
+      operationId: getAutogeneration
+      x-rate-limit-category: autogenerator
+      parameters:
+      - $ref: '#/components/parameters/CallbackIdPath'
+      - in: query
+        name: deck_callback_id
+        required: false
+        description: Original deck callback id when polling a regenerate sub-job.
+        schema:
+          type: string
+      - in: query
+        name: operation
+        required: false
+        description: Sub-operation hint (used by regenerate flows).
+        schema:
+          type: string
+      - in: query
+        name: status_auto_polling
+        required: false
+        description: Pass `true` to indicate the caller is auto-polling; affects how stalled jobs are surfaced.
+        schema:
+          type: string
+          enum:
+          - 'true'
+          - 'false'
+      responses:
+        '200':
+          description: Current job status returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorStatusResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerations/lookups:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Look up multiple AutoGenerator jobs in one call
+      description: 'Returns layout metadata for each `callback_id` in the request. Use
+
+        when rendering a list view that needs many decks at once.
+
+        '
+      operationId: createAutogenerationLookup
+      x-rate-limit-category: autogenerator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorStatusBulkRequest'
+      responses:
+        '200':
+          description: Bulk status returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorStatusBulkResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerator/meta:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Fetch slide-metadata for asset IDs
+      description: 'Returns slide-level metadata (titles, layout codes, thumbnails) for
+
+        each asset id provided. Used by editors that need to enrich a slide
+
+        list without re-running generation.
+
+        '
+      operationId: getAutoGeneratorMeta
+      x-rate-limit-category: autogenerator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorMetaRequest'
+      responses:
+        '200':
+          description: Metadata returned for each asset id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorMetaResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerations/{callback_id}/downloads:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Create a download artefact for an AutoGenerator deck
+      description: 'Synchronously merges all slides for the given `callback_id` into a
+
+        single PowerPoint (or PDF, depending on `outputFormat`) and returns
+
+        a signed download URL. The merge step can take up to 60 seconds.
+
+        Subject to the `AUTO_GEN_DOWNLOAD` usage limit in addition to the
+
+        normal rate limits.
+
+        '
+      operationId: createAutogenerationDownload
+      x-rate-limit-category: autogenerator
+      parameters:
+      - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorDownloadRequest'
+      responses:
+        '200':
+          description: Merged deck produced; signed URL returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorDownloadResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerations/{callback_id}/regenerations:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Create a regeneration of an AutoGenerator deck
+      description: 'Re-runs a portion of an existing AutoGenerator deck — typically a
+
+        slide, node, or section — and returns a new `callback_id` to poll.
+
+        Counted as a fresh generation against the `AUTO_GEN` usage cap.
+
+        '
+      operationId: createAutogenerationRegeneration
+      x-rate-limit-category: autogenerator
+      parameters:
+      - $ref: '#/components/parameters/CallbackIdPath'
+      - in: query
+        name: operation
+        required: true
+        description: The regenerate sub-operation (for example `node_change`, `slide_regenerate`).
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorRegenerateRequest'
+      responses:
+        '200':
+          description: Regenerate job accepted; poll the returned `new_callback_id`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorRegenerateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerations/{callback_id}/node-changes:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Create a node-level change on an AutoGenerator slide
+      description: 'Mutates a single node (text, image, shape) within a slide of an
+
+        existing deck. Returns the updated slide payload synchronously.
+
+        '
+      operationId: createAutogenerationNodeChange
+      x-rate-limit-category: autogenerator
+      parameters:
+      - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorNodeChangeRequest'
+      responses:
+        '200':
+          description: Node change applied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorGenericDataResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerator/slide-data:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Fetch slide data for a single slide callback
+      description: 'Returns the raw slide-data document (text, images, layout,
+
+        speaker notes) for the given `slide_callback_id`.
+
+        '
+      operationId: getAutoGeneratorSlideData
+      x-rate-limit-category: autogenerator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorSlideDataRequest'
+      responses:
+        '200':
+          description: Slide data returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorGenericDataResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerations/{callback_id}/image-extractions:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Create an image-extraction for an AutoGenerator deck
+      description: 'Reads the PowerPoint at the given S3 location and returns the list
+
+        of embedded images. If `force_update` is true, re-runs extraction
+
+        even when cached results exist.
+
+        '
+      operationId: createAutogenerationImageExtraction
+      x-rate-limit-category: autogenerator
+      parameters:
+      - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorExtractImagesRequest'
+      responses:
+        '200':
+          description: Image list returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorGenericDataResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerator/brand-image-search:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Search the caller's brand-image library
+      description: 'Returns brand images that match the query string, ordered by
+
+        relevance. Supports `skip` and `limit` for pagination.
+
+        '
+      operationId: searchAutoGeneratorBrandImages
+      x-rate-limit-category: autogenerator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorBrandImageSearchRequest'
+      responses:
+        '200':
+          description: Matching brand images returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorMessageDataResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerator/library-image-search:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Search the configured stock-image library
+      description: 'Searches the configured stock image provider (Adobe Stock or
+
+        Freepik, depending on company configuration). Supports
+
+        `limit`/`offset` pagination. If `searchKey` is omitted, the
+
+        handler infers it from the supplied slide context.
+
+        '
+      operationId: searchAutoGeneratorLibraryImages
+      x-rate-limit-category: autogenerator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorLibraryImageSearchRequest'
+      responses:
+        '200':
+          description: Matching library images returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorMessageDataResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerations/{callback_id}/image-replacements:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Create an image replacement on an AutoGenerator slide
+      description: 'Swaps an image on a slide with a new image sourced from the
+
+        caller''s workspace, Adobe Stock, Freepik, a previously uploaded
+
+        file, an extracted image, or S3.
+
+        '
+      operationId: createAutogenerationImageReplacement
+      x-rate-limit-category: autogenerator
+      parameters:
+      - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorReplaceImageRequest'
+      responses:
+        '200':
+          description: Image replacement completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorMessageDataResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerations/{callback_id}/reactions:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Create a reaction on an AutoGenerator deck
+      description: 'Persists a user reaction (like) or qualitative feedback against a
+
+        previously generated deck/slide. When `type` is `feedback`,
+
+        `shareDetails` must be provided.
+
+        '
+      operationId: createAutogenerationReaction
+      x-rate-limit-category: autogenerator
+      parameters:
+      - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorReactionFeedbackRequest'
+      responses:
+        '200':
+          description: Reaction/feedback stored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorReactionFeedbackResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+  /api/v1/autogenerations/{callback_id}/slide-actions:
+    post:
+      tags:
+      - AutoGenerator
+      summary: Create a per-slide action on an AutoGenerator deck
+      description: 'Performs one of four actions against a slide: `duplicate`,
+
+        `delete`, `add_sources_to_slides_note`, or `speaker_notes`. The
+
+        required body fields depend on `action`.
+
+        '
+      operationId: createAutogenerationSlideAction
+      x-rate-limit-category: autogenerator
+      parameters:
+      - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorSlideActionsRequest'
+      responses:
+        '200':
+          description: Slide action completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorSlideActionsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          $ref: '#/components/responses/GatewayTimeout'
+components:
+  schemas:
+    AutoGeneratorStartResponse:
+      description: Response body for `POST /api/v1/autogenerator`.
+      allOf:
+      - $ref: '#/components/schemas/CallbackEnvelope'
+    AutoGeneratorMetaRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/meta`.
+      required:
+      - assetIds
+      - callbackID
+      properties:
+        assetIds:
+          type: array
+          description: Asset ids to look up metadata for.
+          minItems: 1
+          items:
+            type: string
+        callbackID:
+          type: string
+          description: Parent deck callback id. (Legacy camelCase preserved for backwards compatibility; new clients should also continue to send this field.)
+      additionalProperties: true
+    AutoGeneratorStatusBulkRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/status-bulk`.
+      required:
+      - callback_ids
+      properties:
+        callback_ids:
+          type: array
+          description: Callback ids to look up.
+          minItems: 1
+          items:
+            type: string
+      additionalProperties: true
+    CallbackEnvelope:
+      description: Async-start envelope. `data.callback_id` is the value the client polls.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            required:
+            - callback_id
+            properties:
+              callback_id:
+                type: string
+                description: Server-issued opaque identifier.
+              token:
+                type: string
+                description: Optional one-time token used by callback-id-scoped URLs (for example status polling when no Bearer key is available).
+            additionalProperties: true
+    ErrorCode:
+      type: string
+      description: 'Stable identifier for an error condition. Codes never change
+
+        meaning or HTTP status once published.
+
+        '
+      enum:
+      - INVALID_API_KEY
+      - EXPIRED_API_KEY
+      - UNAUTHORIZED
+      - FORBIDDEN
+      - ENDPOINT_NOT_FOUND
+      - RESOURCE_NOT_FOUND
+      - NOT_FOUND
+      - METHOD_NOT_ALLOWED
+      - UNSUPPORTED_FILE_TYPE
+      - INVALID_INPUT
+      - UNPROCESSABLE_ENTITY
+      - RATE_LIMIT_EXCEEDED
+      - USAGE_LIMIT_EXCEEDED
+      - TOO_MANY_REQUESTS
+      - THROTTLED
+      - BAD_REQUEST
+      - INVALID_JSON
+      - MISSING_REQUIRED_FIELD
+      - MISSING_QUERY_PARAM
+      - MISSING_CALLBACK_ID
+      - MISSING_SLIDES_ARRAY
+      - MISSING_PROMPT
+      - MISSING_TEMPLATE_ID
+      - MISSING_FILE_CONTENT
+      - MISSING_SHARE_DETAILS
+      - INVALID_TYPE
+      - INVALID_DATA
+      - INVALID_DATA_TYPE
+      - INVALID_PAYLOAD
+      - INVALID_REQUEST
+      - API_REQUEST_FAILED
+      - FILE_UPLOAD_FAILED
+      - MAX_RETRIES_EXCEEDED
+      - EXTERNAL_SERVICE_ERROR
+      - INTERNAL_SERVER_ERROR
+      - SERVICE_UNAVAILABLE
+      - GATEWAY_TIMEOUT
+    AutoGeneratorReactionFeedbackResponse:
+      description: Response body for `POST /api/v1/autogenerator/reaction-feedback`.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              uuid:
+                type: string
+                description: Target asset uuid.
+              type:
+                type: string
+                enum:
+                - liked
+                - feedback
+                description: Reaction kind.
+              value:
+                description: Recorded value.
+                oneOf:
+                - type: boolean
+                - type: string
+              message:
+                type: string
+                description: Human-readable confirmation.
+            additionalProperties: true
+    AutoGeneratorRegenerateRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/regenerate`.
+      required:
+      - callback_id
+      properties:
+        callback_id:
+          type: string
+          description: Existing deck callback id.
+        audience:
+          type: string
+          description: Override audience for the regenerated portion.
+        template_code:
+          type: string
+          description: Override template code for the regenerated portion.
+        slide_override:
+          type: object
+          description: Slide-level overrides.
+          additionalProperties: true
+        story_content_override:
+          type: object
+          description: Narrative-content overrides.
+          additionalProperties: true
+        context:
+          type: object
+          description: Additional context to inject into the regenerate pass.
+          additionalProperties: true
+        duration:
+          type: string
+          description: Desired duration for the regenerated section.
+        voice_settings:
+          type: object
+          description: Voice/tone settings.
+          additionalProperties: true
+        data_sources_settings:
+          type: object
+          description: Data-source configuration.
+          additionalProperties: true
+        preserve_text:
+          type: boolean
+          description: Preserve existing text where possible.
+      additionalProperties: true
+    AutoGeneratorLibraryImageSearchRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/library-image-search`.
+      properties:
+        searchKey:
+          type: string
+          description: Search query. If blank, derived from the supplied slide context.
+        limit:
+          type: integer
+          default: 30
+          description: Maximum number of results.
+        offset:
+          type: integer
+          default: 0
+          description: Result offset.
+        slide_callback_id:
+          type: string
+          description: Optional slide callback id used to infer `searchKey`.
+      additionalProperties: true
+    AutoGeneratorDownloadResponse:
+      description: Response body for `POST /api/v1/autogenerator/download`.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            required:
+            - download_url
+            properties:
+              status:
+                type: string
+                enum:
+                - success
+                description: Merge status.
+              output_file:
+                type: string
+                description: S3 key of the merged file.
+              download_url:
+                type: string
+                format: uri
+                description: Signed download URL.
+              message:
+                type: string
+                description: Human-readable confirmation.
+            additionalProperties: true
+    ErrorEnvelope:
+      type: object
+      description: 'Standard error envelope returned by every documented endpoint
+
+        (both in-Lambda and gateway-level errors). Additional legacy
+
+        keys may appear alongside `success`/`data`/`error` for
+
+        backwards compatibility.
+
+        '
+      required:
+      - success
+      - data
+      - error
+      properties:
+        success:
+          type: boolean
+          const: false
+          description: Always `false` on error.
+        data:
+          type:
+          - object
+          - 'null'
+          description: Always `null` on error.
+        error:
+          type: object
+          required:
+          - code
+          - message
+          description: Error description.
+          properties:
+            code:
+              $ref: '#/components/schemas/ErrorCode'
+            message:
+              type: string
+              description: Human-readable error description (English).
+            details:
+              type: object
+              description: Optional structured details (validation failures, downstream-service info, etc.).
+              additionalProperties: true
+      additionalProperties: true
+    AutoGeneratorRegenerateResponse:
+      description: Response body for `POST /api/v1/autogenerator/regenerate`.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            required:
+            - new_callback_id
+            properties:
+              new_callback_id:
+                type: string
+                description: Callback id to poll for the regenerate sub-job.
+              message:
+                type: string
+                description: Human-readable confirmation.
+            additionalProperties: true
+    AutoGeneratorBrandImageSearchRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/brand-image-search`.
+      required:
+      - callback_id
+      properties:
+        callback_id:
+          type: string
+          description: Deck callback id (used for scoping to the right company).
+        query:
+          type: string
+          description: Search query. Defaults to `*` (return all).
+        skip:
+          type: integer
+          minimum: 0
+          description: Number of results to skip (pagination offset).
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Maximum number of results to return.
+      additionalProperties: true
+    AutoGeneratorGenericDataResponse:
+      description: Generic success envelope where `data` is an opaque object passed through from a downstream service. Used by node-change, slide-data, extract-images.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            description: Downstream payload (shape varies).
+            additionalProperties: true
+    AutoGeneratorStartRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator`.
+      required:
+      - prompt
+      properties:
+        prompt:
+          type: string
+          description: Natural-language description of the deck to generate.
+        text:
+          type: string
+          description: Additional free-text context to ground the deck.
+        files:
+          type: array
+          description: Previously uploaded supporting files (by id).
+          items:
+            type: string
+        web_links:
+          type: array
+          description: Web URLs to ingest as additional context.
+          items:
+            type: string
+            format: uri
+        image_ids:
+          type: array
+          description: Image identifiers to source from the caller's library.
+          items:
+            type: string
+        audience:
+          type: string
+          description: Target audience id or persona name.
+        template_id:
+          type: string
+          description: Target theme/template id.
+        settings:
+          type: object
+          description: Per-generation settings.
+          properties:
+            add_sources_to_footer:
+              type: boolean
+              description: Render source attributions in slide footers.
+            add_sources_to_slides_note:
+              type: boolean
+              description: Render source attributions in slide notes.
+            generate_speaker_notes:
+              type: boolean
+              description: Generate speaker notes.
+            extract_graph_data:
+              type: boolean
+              description: Extract structured data from images/charts in supporting files.
+          additionalProperties: true
+      additionalProperties: true
+    AutoGeneratorSlideActionsRequest:
+      type: object
+      description: "Request body for `POST /api/v1/autogenerator/slide-actions`.\nRequired fields depend on `action`:\n  - `duplicate` / `delete` → `deck_callback_id`,\n    `slide_callback_id`.\n  - `add_sources_to_slides_note` / `speaker_notes` → `uuid`,\n    `type`, `data`.\n"
+      required:
+      - action
+      properties:
+        action:
+          type: string
+          enum:
+          - duplicate
+          - delete
+          - add_sources_to_slides_note
+          - speaker_notes
+          description: Sub-action to perform.
+        deck_callback_id:
+          type: string
+          description: Deck callback id (required for `duplicate` / `delete`).
+        slide_callback_id:
+          type: string
+          description: Slide callback id (required for `duplicate` / `delete`).
+        uuid:
+          type: string
+          description: Target uuid (required for note-style actions).
+        type:
+          type: string
+          description: Note-style sub-type (required for note-style actions).
+        data:
+          type: object
+          description: Action-specific payload (required for note-style actions).
+          additionalProperties: true
+      additionalProperties: true
+    AutoGeneratorExtractImagesRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/extract-images`.
+      required:
+      - s3_bucket
+      - s3_path
+      properties:
+        s3_bucket:
+          type: string
+          description: S3 bucket containing the PowerPoint.
+        s3_path:
+          type: string
+          description: S3 key (path) of the PowerPoint.
+        force_update:
+          type: boolean
+          description: Re-extract even if cached results exist.
+      additionalProperties: true
+    AutoGeneratorReactionFeedbackRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/reaction-feedback`.
+      required:
+      - uuid
+      - type
+      - value
+      properties:
+        uuid:
+          type: string
+          description: Target asset uuid (deck or slide).
+        type:
+          type: string
+          enum:
+          - liked
+          - feedback
+          description: Reaction kind.
+        value:
+          description: When `type=liked`, a boolean. When `type=feedback`, a string.
+          oneOf:
+          - type: boolean
+          - type: string
+        shareDetails:
+          type: object
+          description: Additional details. **Required** when `type=feedback`.
+          additionalProperties: true
+      additionalProperties: true
+    AutoGeneratorStatusResponse:
+      description: Response body for `GET /api/v1/autogenerator/status`.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/AutoGeneratorStatusData'
+    SuccessEnvelope:
+      type: object
+      description: 'Standard success envelope. Endpoint-specific schemas extend this
+
+        and constrain the `data` property to their concrete shape.
+
+        Additional legacy keys (`status`, `log`, …) may appear alongside
+
+        `success`/`data` for backwards compatibility, and some legacy
+
+        handlers omit `success`, so it is not marked required.
+
+        '
+      required:
+      - data
+      properties:
+        success:
+          type: boolean
+          description: '`true` on success (omitted by some legacy handlers).'
+        data:
+          type: object
+          description: Endpoint-specific payload.
+      additionalProperties: true
+    AutoGeneratorSlideDataRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/slide-data`.
+      required:
+      - slide_callback_id
+      properties:
+        slide_callback_id:
+          type: string
+          description: Slide callback id whose data to return.
+      additionalProperties: true
+    AutoGeneratorStatusBulkResponse:
+      description: Response body for `POST /api/v1/autogenerator/status-bulk`. Standalone schema — unlike most responses, `data` is an array, so this does not extend SuccessEnvelope (whose `data` is an object).
+      type: object
+      required:
+      - success
+      - data
+      additionalProperties: true
+      properties:
+        success:
+          type: boolean
+          const: true
+          description: Always `true` on success.
+        data:
+          type: array
+          description: One entry per requested callback id.
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              slide_id:
+                type: string
+                description: Slide id within the deck.
+              layouts:
+                type: array
+                description: Layouts available for this slide.
+                items:
+                  type: object
+                  additionalProperties: true
+    AutoGeneratorSlideActionsResponse:
+      description: "Response body for `POST /api/v1/autogenerator/slide-actions`.\nThe `data` shape depends on the requested `action`:\n  - `duplicate` → `{ new_callback_id }`.\n  - `delete` → `{ deleted_slide_id }`.\n  - `add_sources_to_slides_note` / `speaker_notes` → service\n    payload.\n"
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            properties:
+              new_callback_id:
+                type: string
+                description: Returned for `action=duplicate`.
+              deleted_slide_id:
+                type: string
+                description: Returned for `action=delete`.
+              message:
+                type: string
+                description: Human-readable confirmation.
+            additionalProperties: true
+    AutoGeneratorNodeChangeRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/node-change`.
+      required:
+      - callback_id
+      - slide_callback_id
+      properties:
+        callback_id:
+          type: string
+          description: Deck callback id.
+        slide_callback_id:
+          type: string
+          description: Slide callback id to modify.
+        slide_override:
+          type: object
+          description: Node-level changes to apply to the slide.
+          additionalProperties: true
+      additionalProperties: true
+    AutoGeneratorMetaResponse:
+      description: Response body for `POST /api/v1/autogenerator/meta`.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            description: Metadata payload from the SlideMeta service (passthrough).
+            additionalProperties: true
+    AutoGeneratorDownloadRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/download`.
+      required:
+      - callback_id
+      properties:
+        callback_id:
+          type: string
+          minLength: 1
+          description: Deck callback id to merge & download.
+        sources:
+          type: object
+          description: Source-attribution configuration for the merged output.
+          properties:
+            add_sources_to_slides_note:
+              type: boolean
+              description: Render source attributions in slide notes.
+          additionalProperties: true
+        speaker_notes:
+          type: object
+          description: Speaker-notes configuration for the merged output.
+          properties:
+            add_speaker_notes_to_slides_note:
+              type: boolean
+              description: Merge speaker notes into slide notes.
+            speaker_notes_type:
+              type: string
+              description: Speaker-notes formatting style.
+          additionalProperties: true
+        outputPath:
+          type: string
+          description: Optional S3 key (path) for the merged output.
+        sections:
+          type: array
+          description: Optional list of sections to include (defaults to all).
+          items:
+            type: string
+        outputFormat:
+          type: string
+          description: Output format (for example `pptx`, `pdf`).
+        outputBucket:
+          type: string
+          description: Optional S3 bucket for the merged output.
+      additionalProperties: true
+    AutoGeneratorReplaceImageRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/replace-image`.
+      required:
+      - oldImage
+      - newImage
+      - slide_callback_id
+      properties:
+        oldImage:
+          type: object
+          description: Description of the existing image being replaced.
+          required:
+          - meta
+          - shapeType
+          properties:
+            meta:
+              type: object
+              description: Image metadata (size, position, etc.).
+              additionalProperties: true
+            shapeType:
+              type: string
+              description: PowerPoint shape type.
+          additionalProperties: true
+        newImage:
+          type: object
+          description: Description of the replacement image.
+          required:
+          - source
+          properties:
+            imageIndex:
+              type: integer
+              description: Index within the source result set.
+            source:
+              type: string
+              enum:
+              - myWorkspace
+              - adobe
+              - freepik
+              - upload
+              - extracted
+              - s3
+              - brand-images
+              description: Source of the replacement image.
+            s3_path:
+              type: string
+              description: S3 key when `source` is `s3` or `upload`.
+            s3_bucket:
+              type: string
+              description: S3 bucket when `source` is `s3` or `upload`.
+            id:
+              type: string
+              description: Image id when `source` is `adobe`, `freepik`, `myWorkspace`, `brand-images`, or `extracted`.
+            image:
+              type: string
+              description: Base64-encoded image content for inline uploads.
+            extension:
+              type: string
+              description: File extension (e.g. `png`, `jpg`).
+          additionalProperties: true
+        slide_callback_id:
+          type: string
+          description: Slide callback id where the image lives.
+        duplicate_slide_callback_id:
+          type: string
+          description: Optional duplicate slide id to mirror the replacement onto.
+      additionalProperties: true
+    AutoGeneratorStatusData:
+      type: object
+      description: 'AutoGenerator job state. The handler emits many legacy top-level
+
+        fields alongside the documented ones; only the documented fields
+
+        are part of the contract.
+
+        '
+      properties:
+        status:
+          type: string
+          enum:
+          - in_progress
+          - success
+          - failed
+          description: Job status.
+        callback_id:
+          type: string
+          description: The callback id being polled.
+        prompt:
+          type: string
+          description: Original prompt that initiated the job.
+        fileName:
+          type: string
+          description: Filename of the generated deck.
+        allSlides:
+          type: array
+          description: Generated slides (present once `status=success`).
+          items:
+            type: object
+            additionalProperties: true
+        extracted_images:
+          type: array
+          description: Images extracted from supporting files.
+          items:
+            type: object
+            additionalProperties: true
+        company:
+          type: string
+          description: Owning company id.
+        companyDisplayName:
+          type: string
+          description: Owning company display name.
+        final_output:
+          type: object
+          description: Final-output blob (present once `status=success`).
+          additionalProperties: true
+        template_code:
+          type: string
+          description: Target template code used for generation.
+        audience:
+          type: string
+          description: Target audience used for generation.
+        execution_start:
+          type: string
+          format: date-time
+          description: Pipeline start time.
+        execution_end:
+          type: string
+          format: date-time
+          description: Pipeline end time (present once terminal).
+        presentation_theme:
+          type: object
+          description: Resolved theme metadata.
+          additionalProperties: true
+        voice_settings:
+          type: object
+          description: Voice/tone settings applied.
+          additionalProperties: true
+        speaker_notes:
+          type: object
+          description: Speaker-notes configuration applied.
+          additionalProperties: true
+        cached:
+          type: boolean
+          description: Whether this response was served from cache.
+        cached_at:
+          type: string
+          format: date-time
+          description: Timestamp of the cached entry.
+      additionalProperties: true
+    AutoGeneratorMessageDataResponse:
+      description: Success envelope with a human-readable `message` alongside `data`. Used by image-search and replace-image.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            description: Service-specific payload.
+            additionalProperties: true
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: 'Optional client-generated key (a UUID is ideal) that makes a
+
+        write request safe to retry. The first request is processed and
+
+        its response cached for 24 hours; an identical retry with the
+
+        same key returns the cached response plus an
+
+        `Idempotency-Replayed: true` header, so the job is never created
+
+        twice. Reusing a key with a **different** body returns
+
+        `409 IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_BODY`.
+
+        '
+      schema:
+        type: string
+        example: 8e6df756-18f6-4f16-8e12-7d7a5c5cb181
+    CallbackIdPath:
+      name: callback_id
+      in: path
+      required: true
+      description: Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts.
+      schema:
+        type: string
+        minLength: 1
+  responses:
+    Forbidden:
+      description: Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: FORBIDDEN
+              message: Access to the resource is forbidden.
+              details: {}
+    RateLimited:
+      description: "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n"
+      headers:
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/XRateLimitLimit'
+        X-RateLimit-Remaining:
+          $ref: '#/components/headers/XRateLimitRemaining'
+        X-RateLimit-Reset:
+          $ref: '#/components/headers/XRateLimitReset'
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: RATE_LIMIT_EXCEEDED
+              message: Rate limit exceeded for this category. Try again later.
+              details:
+                category: auto_generator
+                retry_after_seconds: 12
+    ServiceUnavailable:
+      description: Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: SERVICE_UNAVAILABLE
+              message: Service is temporarily unavailable.
+              details: {}
+    Unauthorized:
+      description: 'Caller did not present a valid Bearer token, or the token has
+
+        expired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,
+
+        `EXPIRED_API_KEY`.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: INVALID_API_KEY
+              message: API key not found or not authorized.
+              details: {}
+    NotFound:
+      description: 'Requested endpoint or resource does not exist. `error.code` is
+
+        one of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: RESOURCE_NOT_FOUND
+              message: The requested resource was not found.
+              details: {}
+    GatewayTimeout:
+      description: A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: GATEWAY_TIMEOUT
+              message: Gateway timeout.
+              details: {}
+    IdempotencyConflict:
+      description: 'The supplied `Idempotency-Key` was already used with a different
+
+        request body. Reuse a key only for identical retried requests.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_BODY
+              message: This Idempotency-Key was already used with a different request body.
+              details: {}
+    InternalServerError:
+      description: Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: INTERNAL_SERVER_ERROR
+              message: An unexpected server error occurred.
+              details: {}
+    BadRequest:
+      description: Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: BAD_REQUEST
+              message: Bad request.
+              details: {}
+    UnprocessableEntity:
+      description: 'Request was well-formed but failed semantic validation.
+
+        `error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: INVALID_INPUT
+              message: Invalid input provided.
+              details: {}
+  headers:
+    XRateLimitReset:
+      description: Unix timestamp (seconds) when the current rate-limit window resets.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    XRateLimitLimit:
+      description: 'The configured request limit for the rate-limit category
+
+        (requests per 60-second window) that applied to this call.
+
+        The applicable category is the operation''s `x-rate-limit-category`.
+
+        Returned on every response (success and 429) so clients can
+
+        self-throttle. See the Rate limits guide for the default
+
+        per-category numbers.
+
+        '
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    RetryAfter:
+      description: Number of seconds the client should wait before retrying.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    IdempotencyReplayed:
+      description: Present and set to `true` when this response was served from the idempotency cache for a repeated `Idempotency-Key`.
+      schema:
+        type: string
+        enum:
+        - 'true'
+    XRateLimitRemaining:
+      description: 'Approximate number of requests remaining in the current
+
+        60-second window for this caller and category.
+
+        '
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: 'Bearer token authentication. Supply the API key issued by
+
+        Customer Success as `Authorization: Bearer <api_key>`. The API
+
+        does NOT accept the AWS `x-api-key` header. Keys may have an
+
+        expiry date; expired keys return `401 EXPIRED_API_KEY`. Keys are
+
+        scoped to specific paths; calling an unauthorised path returns
+
+        `404 ENDPOINT_NOT_FOUND`.
+
+        '
