@@ -1,0 +1,2238 @@
+{
+  "info": {
+    "_postman_id": "971071aa-5528-453d-ade7-0ade62fae1f1",
+    "name": "Prezent Platform Audiences Upload API",
+    "description": "The Prezent Platform API exposes Prezent's AutoGenerator, Template Converter,\nAudiences, Themes, and File-upload services as a uniform JSON HTTP API.\n\nThis contract describes the **target agent-ready shape** of the API: every\ndocumented endpoint returns a uniform success envelope `{ \"success\": true,\n\"data\": { ... } }` or a uniform error envelope `{ \"success\": false,\n\"data\": null, \"error\": { \"code\": \"...\", \"message\": \"...\", \"details\": { ... } } }`.\nError codes are drawn from a stable catalog (see `ErrorCode`). The contract\nis additive: handlers may continue to emit legacy keys alongside the\ndocumented ones for backwards compatibility, so schemas explicitly allow\nadditional properties at the envelope and data levels.\n\nSeveral endpoints kick off long-running background work and return a\n`callback_id` that the client polls against a corresponding status\nendpoint. The canonical async polling endpoint for the Template Converter\nfamily is **`GET /api/v2/template-converter/status/{callback_id}`** which\nuses strict HTTP-status mapping (200 only on workflow success, 4xx/5xx on\nworkflow failure). The v1 polling endpoint at\n`/api/v1/template-converter/status/{callbackId}` (and its REST alias\n`GET /api/v1/template-conversions/{callback_id}`) continues to be served\nwith legacy semantics (HTTP 200 with `status` field) and is intentionally\nomitted from this documentation.\n\n**REST resource aliases (v1.1).** AutoGenerator and Template Converter\nendpoints are documented here under their REST-resource path names\n(`/api/v1/autogenerations`, `/api/v1/template-conversions`). The legacy\nRPC-style paths under `/api/v1/autogenerator/*` and\n`/api/v1/template-converter/*` continue to be served indefinitely; they\nreturn a `Deprecation: true` header pointing to the successor alias.\n\n**Conventions that apply to every endpoint** (full reference in the\ncompanion guides on this documentation site):\n\n- **Auth:** API key as a Bearer token \u2014 `Authorization: Bearer <key>`.\n  Each key is scoped to an allow-list of endpoint paths; an out-of-scope\n  call returns `404 ENDPOINT_NOT_FOUND`.\n- **Rate limits:** gateway throttle 10 req/s sustained, 5 burst,\n  1,000 req/day per key; per-company per-category 60-second sliding\n  windows; annual quotas (50,000 slide generations/yr, 1,000,000\n  downloads/yr). Limit breaches return `429` with `error.code`\n  `TOO_MANY_REQUESTS` (gateway), `RATE_LIMIT_EXCEEDED` (per-category),\n  or `USAGE_LIMIT_EXCEEDED` (annual).\n- **Errors:** every error uses the `{ success:false, data:null, error:{\n  code, message, details } }` envelope with stable, documented `code`\n  values.\n- **Idempotency & pagination:** mutating requests accept an\n  `Idempotency-Key`; list endpoints accept opt-in `limit`/`cursor`\n  paging.\n\n**Building with an AI agent?** Prezent ships a first-class Model Context\nProtocol (MCP) server. The hosted endpoint is\n`https://mcp.myprezent.com/mcp` (OAuth 2.1, works with Claude.ai Custom\nConnectors); a local stdio server is published on PyPI as\n`prezent-mcp-server` and plugs into Claude Desktop, Cursor, Cline,\nContinue, and Zed. The MCP tools wrap the same REST endpoints\ndescribed here.\n\n**Official SDKs.** Typed REST clients are published for Python and\nTypeScript (`prezent-sdk`) \u2014 generated from and versioned against this\nspec. For other languages, generate a client from this document.\n\n**Out of scope of this document:** SCIM endpoints under `/api/v1/scim/*`.\nThose endpoints conform to RFC 7644 (SCIM 2.0) and follow a different\nenvelope (`schemas`, `Resources`, `totalResults`, etc.). They are\ndocumented separately at /docs/scim-user-management.\n\n\nContact Support:\n Name: Prezent API Support\n Email: support@prezent.ai",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "createdAt": "2026-07-28T02:40:37.000Z",
+    "updatedAt": "2026-07-28T02:40:37.000Z",
+    "lastUpdatedBy": "35240",
+    "uid": "35240-971071aa-5528-453d-ade7-0ade62fae1f1"
+  },
+  "item": [
+    {
+      "name": "api",
+      "item": [
+        {
+          "name": "v1",
+          "item": [
+            {
+              "name": "upload",
+              "item": [
+                {
+                  "name": "Upload a single file (base64-encoded)",
+                  "id": "55bcd630-41a9-4e74-882f-f4885c832967",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                      "options": {
+                        "raw": {
+                          "headerFamily": "json",
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/v1/upload",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "upload"
+                      ]
+                    },
+                    "description": "Accepts a single file as a base64 string or `data:` URL in the\nrequest body. The response contains the uploaded file's id, S3\npath, and metadata.\n"
+                  },
+                  "response": [
+                    {
+                      "id": "1115078d-006d-4f1c-9dae-20f2b95121fd",
+                      "name": "File uploaded.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/upload",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "upload"
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"data\": {\n    \"file\": {\n      \"file_id\": \"<string>\",\n      \"file_name\": \"<string>\",\n      \"file_type\": \"<string>\",\n      \"s3_path\": \"<string>\",\n      \"s3_bucket\": \"<string>\"\n    },\n    \"message\": \"<string>\"\n  },\n  \"success\": \"<boolean>\"\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-1115078d-006d-4f1c-9dae-20f2b95121fd"
+                    },
+                    {
+                      "id": "b29bfae9-162f-402f-ab6e-2b44e9dc9295",
+                      "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DET",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/upload",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "upload"
+                          ]
+                        }
+                      },
+                      "status": "Bad Request",
+                      "code": 400,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-b29bfae9-162f-402f-ab6e-2b44e9dc9295"
+                    },
+                    {
+                      "id": "a28127a8-a35f-4cec-8ea0-f0ef19649d2f",
+                      "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/upload",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "upload"
+                          ]
+                        }
+                      },
+                      "status": "Unauthorized",
+                      "code": 401,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-a28127a8-a35f-4cec-8ea0-f0ef19649d2f"
+                    },
+                    {
+                      "id": "79790dbd-0d5e-4b88-83e5-172a26cd4419",
+                      "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/upload",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "upload"
+                          ]
+                        }
+                      },
+                      "status": "Forbidden",
+                      "code": 403,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-79790dbd-0d5e-4b88-83e5-172a26cd4419"
+                    },
+                    {
+                      "id": "36aaacc2-eb0b-4ccc-b49c-b7cb7271e8fb",
+                      "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/upload",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "upload"
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-36aaacc2-eb0b-4ccc-b49c-b7cb7271e8fb"
+                    },
+                    {
+                      "id": "73e3c055-aa34-4442-8a74-d940a71fc0c4",
+                      "name": "Uploaded file's extension or MIME type is not accepted. `error.code` is `UNSUPPORTED_FILE_TYPE`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/upload",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "upload"
+                          ]
+                        }
+                      },
+                      "status": "Unsupported Media Type",
+                      "code": 415,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-73e3c055-aa34-4442-8a74-d940a71fc0c4"
+                    },
+                    {
+                      "id": "2f795156-8d0f-437d-b8bf-3f964275b458",
+                      "name": "Request was well-formed but failed semantic validation.\n`error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.\n",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/upload",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "upload"
+                          ]
+                        }
+                      },
+                      "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+                      "code": 422,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-2f795156-8d0f-437d-b8bf-3f964275b458"
+                    },
+                    {
+                      "id": "957a7d97-573f-412e-af86-e0e8fc562668",
+                      "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gate",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/upload",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "upload"
+                          ]
+                        }
+                      },
+                      "status": "Too Many Requests",
+                      "code": 429,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Limit",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Remaining",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Reset",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "Retry-After",
+                          "value": ""
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-957a7d97-573f-412e-af86-e0e8fc562668"
+                    },
+                    {
+                      "id": "04e62989-7cc7-4cc6-9a54-af25b7bfd393",
+                      "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/upload",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "upload"
+                          ]
+                        }
+                      },
+                      "status": "Internal Server Error",
+                      "code": 500,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-04e62989-7cc7-4cc6-9a54-af25b7bfd393"
+                    },
+                    {
+                      "id": "4dc8db96-e673-4b4e-966a-a48d4a5edde7",
+                      "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/upload",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "upload"
+                          ]
+                        }
+                      },
+                      "status": "Service Unavailable",
+                      "code": 503,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-4dc8db96-e673-4b4e-966a-a48d4a5edde7"
+                    },
+                    {
+                      "id": "981a0031-beec-4820-84ab-04ac63c38e68",
+                      "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/upload",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "upload"
+                          ]
+                        }
+                      },
+                      "status": "Gateway Timeout",
+                      "code": 504,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-981a0031-beec-4820-84ab-04ac63c38e68"
+                    }
+                  ],
+                  "createdAt": "2026-07-28T02:40:37.000Z",
+                  "updatedAt": "2026-07-28T02:40:37.000Z",
+                  "uid": "35240-55bcd630-41a9-4e74-882f-f4885c832967"
+                }
+              ],
+              "id": "09696e60-d48f-4ee7-a8d3-1a65b3497d1b",
+              "createdAt": "2026-07-28T02:40:37.000Z",
+              "updatedAt": "2026-07-28T02:40:37.000Z",
+              "uid": "35240-09696e60-d48f-4ee7-a8d3-1a65b3497d1b"
+            },
+            {
+              "name": "preprocess",
+              "item": [
+                {
+                  "name": "Preprocess a file in chunks",
+                  "id": "96e48e17-c798-4763-9edd-ada75eefc710",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                      "options": {
+                        "raw": {
+                          "headerFamily": "json",
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/v1/preprocess",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "preprocess"
+                      ]
+                    },
+                    "description": "Accepts one chunk of a multi-chunk file upload. The caller drives\nchunking via `chunkIndex` and `totalChunks`; chunks for the same\nupload share a `requestIdentifier`. Once all chunks for a\n`requestIdentifier` have arrived the file is assembled and made\navailable to downstream operations.\n"
+                  },
+                  "response": [
+                    {
+                      "id": "92760dc3-f46b-440c-b73e-2316ff63e751",
+                      "name": "Chunk received.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/preprocess",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "preprocess"
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"data\": {\n    \"request_identifier\": \"<string>\",\n    \"file_name\": \"<string>\",\n    \"message\": \"<string>\"\n  },\n  \"success\": \"<boolean>\"\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-92760dc3-f46b-440c-b73e-2316ff63e751"
+                    },
+                    {
+                      "id": "f007f74f-84e2-4037-a54f-e481b4933c90",
+                      "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DET",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/preprocess",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "preprocess"
+                          ]
+                        }
+                      },
+                      "status": "Bad Request",
+                      "code": 400,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-f007f74f-84e2-4037-a54f-e481b4933c90"
+                    },
+                    {
+                      "id": "58a386e6-5a5c-4c05-8041-c668ba90e120",
+                      "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/preprocess",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "preprocess"
+                          ]
+                        }
+                      },
+                      "status": "Unauthorized",
+                      "code": 401,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-58a386e6-5a5c-4c05-8041-c668ba90e120"
+                    },
+                    {
+                      "id": "f150d87d-4507-40aa-9d69-7358084c7d60",
+                      "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/preprocess",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "preprocess"
+                          ]
+                        }
+                      },
+                      "status": "Forbidden",
+                      "code": 403,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-f150d87d-4507-40aa-9d69-7358084c7d60"
+                    },
+                    {
+                      "id": "ca7ff317-7f99-4fd0-ba10-ff26c8029385",
+                      "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/preprocess",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "preprocess"
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-ca7ff317-7f99-4fd0-ba10-ff26c8029385"
+                    },
+                    {
+                      "id": "b7580d7a-e14c-4c93-9114-418460696482",
+                      "name": "Uploaded file's extension or MIME type is not accepted. `error.code` is `UNSUPPORTED_FILE_TYPE`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/preprocess",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "preprocess"
+                          ]
+                        }
+                      },
+                      "status": "Unsupported Media Type",
+                      "code": 415,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-b7580d7a-e14c-4c93-9114-418460696482"
+                    },
+                    {
+                      "id": "e3838f15-e9a9-448d-823d-b94fd21b3c74",
+                      "name": "Request was well-formed but failed semantic validation.\n`error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.\n",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/preprocess",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "preprocess"
+                          ]
+                        }
+                      },
+                      "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+                      "code": 422,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-e3838f15-e9a9-448d-823d-b94fd21b3c74"
+                    },
+                    {
+                      "id": "83c3aad1-828a-4b86-86b1-59cd9d31baf6",
+                      "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gate",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/preprocess",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "preprocess"
+                          ]
+                        }
+                      },
+                      "status": "Too Many Requests",
+                      "code": 429,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Limit",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Remaining",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Reset",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "Retry-After",
+                          "value": ""
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-83c3aad1-828a-4b86-86b1-59cd9d31baf6"
+                    },
+                    {
+                      "id": "6453aae6-9e65-4836-9b87-360d49f64297",
+                      "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/preprocess",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "preprocess"
+                          ]
+                        }
+                      },
+                      "status": "Internal Server Error",
+                      "code": 500,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-6453aae6-9e65-4836-9b87-360d49f64297"
+                    },
+                    {
+                      "id": "81a0aa6e-95c6-431b-a4ee-87e47d468e8e",
+                      "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/preprocess",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "preprocess"
+                          ]
+                        }
+                      },
+                      "status": "Service Unavailable",
+                      "code": 503,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-81a0aa6e-95c6-431b-a4ee-87e47d468e8e"
+                    },
+                    {
+                      "id": "d1dc24a2-0307-4cc6-885d-da63bc0ed428",
+                      "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileContent\": \"<string>\",\n  \"fileName\": \"<string>\",\n  \"chunkIndex\": \"<integer>\",\n  \"totalChunks\": \"<integer>\",\n  \"requestIdentifier\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/preprocess",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "preprocess"
+                          ]
+                        }
+                      },
+                      "status": "Gateway Timeout",
+                      "code": 504,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-d1dc24a2-0307-4cc6-885d-da63bc0ed428"
+                    }
+                  ],
+                  "createdAt": "2026-07-28T02:40:37.000Z",
+                  "updatedAt": "2026-07-28T02:40:37.000Z",
+                  "uid": "35240-96e48e17-c798-4763-9edd-ada75eefc710"
+                }
+              ],
+              "id": "f6e0d46b-575c-427a-a002-fcced4b0e1f9",
+              "createdAt": "2026-07-28T02:40:37.000Z",
+              "updatedAt": "2026-07-28T02:40:37.000Z",
+              "uid": "35240-f6e0d46b-575c-427a-a002-fcced4b0e1f9"
+            },
+            {
+              "name": "validate",
+              "item": [
+                {
+                  "name": "Validate uploaded files and/or web links",
+                  "id": "111e0e3e-a857-41d0-bfc0-2d750af79d0c",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "POST",
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                      "options": {
+                        "raw": {
+                          "headerFamily": "json",
+                          "language": "json"
+                        }
+                      }
+                    },
+                    "url": {
+                      "raw": "{{baseUrl}}/api/v1/validate",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "validate"
+                      ]
+                    },
+                    "description": "Validates a set of previously uploaded files (referenced by\n`fileIdentifiers`) and/or a list of web links. At least one of\n`fileIdentifiers` or `webLinks` must be non-empty.\n"
+                  },
+                  "response": [
+                    {
+                      "id": "e9527397-e056-40bb-847e-91a61580b65a",
+                      "name": "Validation result returned.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/validate",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "validate"
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"data\": {\n    \"files\": [\n      {\n        \"uuid\": \"<string>\",\n        \"file_name\": \"<string>\",\n        \"valid\": \"<boolean>\",\n        \"reason\": \"<string>\",\n        \"Excepteur2\": -77716436\n      },\n      {\n        \"uuid\": \"<string>\",\n        \"file_name\": \"<string>\",\n        \"valid\": \"<boolean>\",\n        \"reason\": \"<string>\"\n      }\n    ],\n    \"web_links\": [\n      {\n        \"url\": \"<string>\",\n        \"valid\": \"<boolean>\",\n        \"reason\": \"<string>\"\n      },\n      {\n        \"url\": \"<string>\",\n        \"valid\": \"<boolean>\",\n        \"reason\": \"<string>\"\n      }\n    ],\n    \"message\": \"<string>\",\n    \"eu_a7\": true\n  },\n  \"success\": \"<boolean>\"\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-e9527397-e056-40bb-847e-91a61580b65a"
+                    },
+                    {
+                      "id": "c16fd66c-eedb-4a08-806e-1bf06be359fa",
+                      "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DET",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/validate",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "validate"
+                          ]
+                        }
+                      },
+                      "status": "Bad Request",
+                      "code": 400,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-c16fd66c-eedb-4a08-806e-1bf06be359fa"
+                    },
+                    {
+                      "id": "ad015250-8160-448c-9b6e-eae1abc1cdd8",
+                      "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/validate",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "validate"
+                          ]
+                        }
+                      },
+                      "status": "Unauthorized",
+                      "code": 401,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-ad015250-8160-448c-9b6e-eae1abc1cdd8"
+                    },
+                    {
+                      "id": "b7fc2f20-7bff-44c0-99ef-a5bceed033ea",
+                      "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/validate",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "validate"
+                          ]
+                        }
+                      },
+                      "status": "Forbidden",
+                      "code": 403,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-b7fc2f20-7bff-44c0-99ef-a5bceed033ea"
+                    },
+                    {
+                      "id": "79197b37-04d7-470c-a14d-d7f11ab0f9b4",
+                      "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/validate",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "validate"
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-79197b37-04d7-470c-a14d-d7f11ab0f9b4"
+                    },
+                    {
+                      "id": "e3d2cdf4-d03b-4f8e-aeba-22b69dfdd3d9",
+                      "name": "Uploaded file's extension or MIME type is not accepted. `error.code` is `UNSUPPORTED_FILE_TYPE`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/validate",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "validate"
+                          ]
+                        }
+                      },
+                      "status": "Unsupported Media Type",
+                      "code": 415,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-e3d2cdf4-d03b-4f8e-aeba-22b69dfdd3d9"
+                    },
+                    {
+                      "id": "c3677f56-84de-436f-9be2-311744a6e031",
+                      "name": "Request was well-formed but failed semantic validation.\n`error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.\n",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/validate",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "validate"
+                          ]
+                        }
+                      },
+                      "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+                      "code": 422,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-c3677f56-84de-436f-9be2-311744a6e031"
+                    },
+                    {
+                      "id": "76458818-b3fa-4f43-b222-dfb484d46437",
+                      "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gate",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/validate",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "validate"
+                          ]
+                        }
+                      },
+                      "status": "Too Many Requests",
+                      "code": 429,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Limit",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Remaining",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Reset",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "Retry-After",
+                          "value": ""
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-76458818-b3fa-4f43-b222-dfb484d46437"
+                    },
+                    {
+                      "id": "8ccc4b61-4a6a-4b5b-8f1e-374939573bae",
+                      "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/validate",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "validate"
+                          ]
+                        }
+                      },
+                      "status": "Internal Server Error",
+                      "code": 500,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-8ccc4b61-4a6a-4b5b-8f1e-374939573bae"
+                    },
+                    {
+                      "id": "a16f30c2-2a1a-4294-9aea-34500925574a",
+                      "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/validate",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "validate"
+                          ]
+                        }
+                      },
+                      "status": "Service Unavailable",
+                      "code": 503,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-a16f30c2-2a1a-4294-9aea-34500925574a"
+                    },
+                    {
+                      "id": "5e838af2-5550-4185-ac77-6a1371e7b11a",
+                      "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+                      "originalRequest": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"fileIdentifiers\": {\n    \"est_40\": \"<string>\"\n  },\n  \"webLinks\": [\n    \"<uri>\",\n    \"<uri>\"\n  ],\n  \"inb21\": -84130088,\n  \"cillum_1c\": true\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/validate",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "validate"
+                          ]
+                        }
+                      },
+                      "status": "Gateway Timeout",
+                      "code": 504,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"ullamco_3\": -81548430,\n      \"in_cda\": -55458267.68340114\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:37.000Z",
+                      "updatedAt": "2026-07-28T02:40:37.000Z",
+                      "uid": "35240-5e838af2-5550-4185-ac77-6a1371e7b11a"
+                    }
+                  ],
+                  "createdAt": "2026-07-28T02:40:37.000Z",
+                  "updatedAt": "2026-07-28T02:40:37.000Z",
+                  "uid": "35240-111e0e3e-a857-41d0-bfc0-2d750af79d0c"
+                }
+              ],
+              "id": "8882ff04-9349-4738-915d-ec24dc7588fa",
+              "createdAt": "2026-07-28T02:40:37.000Z",
+              "updatedAt": "2026-07-28T02:40:37.000Z",
+              "uid": "35240-8882ff04-9349-4738-915d-ec24dc7588fa"
+            }
+          ],
+          "id": "6880681e-c854-4d4c-883b-d9ff5a25f954",
+          "createdAt": "2026-07-28T02:40:37.000Z",
+          "updatedAt": "2026-07-28T02:40:37.000Z",
+          "uid": "35240-6880681e-c854-4d4c-883b-d9ff5a25f954"
+        }
+      ],
+      "id": "75c5bfee-807d-4870-85df-dc7b08d0f107",
+      "createdAt": "2026-07-28T02:40:37.000Z",
+      "updatedAt": "2026-07-28T02:40:37.000Z",
+      "uid": "35240-75c5bfee-807d-4870-85df-dc7b08d0f107"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.prezent.ai"
+    }
+  ]
+}

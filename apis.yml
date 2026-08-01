@@ -1,25 +1,263 @@
 aid: prezent
 name: Prezent
-description: Prezent is a company surfaced as a portfolio company of 500-global and added to the API Evangelist
-  network as a stub for enrichment. This profile is a lead awaiting the enrichment pipeline.
+description: >-
+  Prezent is an AI-powered business communications and presentation platform, with Prezent Vivo
+  purpose-built for life sciences teams. Its Prezent Platform API exposes the AutoGenerator (turn a
+  prompt plus source files into an on-brand deck), Template Converter (reformat existing decks to a
+  brand-compliant template), Audiences, Themes, and file-upload services as a uniform, agent-ready
+  JSON HTTP API. The API uses a Bearer API key, a uniform success/error envelope with a stable error
+  code catalog, Idempotency-Key support, cursor pagination, rate-limit headers, first-class webhooks,
+  and ships an official Model Context Protocol (MCP) server plus typed Python and TypeScript SDKs.
+  Backed by 500 Global.
 url: https://raw.githubusercontent.com/api-evangelist/prezent/refs/heads/main/apis.yml
+accessModel:
+  pricing: unknown
+  onboarding: self-serve
+  trial: false
+  try_now: false
+  public: false
+  label: Self-serve signup
+  confidence: medium
+  source:
+  - authentication
+  generated: '2026-07-22'
+  method: derived
+image: https://teams.prezent.ai/prezent_favicon.svg
 x-type: company
 x-source: vc-portfolio
 x-backed-by:
 - 500-global
-x-tier: stub
-x-tier-reason: portfolio-lead
+x-tier: profiled
+x-tier-reason: enriched-from-public-api-surface
 specificationVersion: '0.20'
 created: '2026-07-17'
-modified: '2026-07-17'
+modified: '2026-07-20'
 tags:
 - Company
-apis: []
+- Presentations
+- Generative AI
+- AI Agents
+- Life Sciences
+- Content Generation
+- Enterprise
+- MCP
+- Productivity
+apis:
+- aid: prezent:prezent-audiences-api
+  name: Prezent Audiences API
+  description: List and search the audience profiles configured for the caller's company.
+  humanURL: https://docs.prezent.ai/
+  baseURL: https://api.prezent.ai
+  tags:
+  - Audiences
+  properties:
+  - type: OpenAPI
+    url: openapi/prezent-audiences-api-openapi.yml
+  - type: Documentation
+    url: https://docs.prezent.ai/
+  - type: APIReference
+    url: https://docs.prezent.ai/api-reference
+- aid: prezent:prezent-autogenerator-api
+  name: Prezent AutoGenerator API
+  description: >-
+    Long-running and synchronous endpoints that generate and manipulate AI-authored presentations from
+    prompts, files, and assets.
+  humanURL: https://docs.prezent.ai/
+  baseURL: https://api.prezent.ai
+  tags:
+  - AutoGenerator
+  properties:
+  - type: OpenAPI
+    url: openapi/prezent-autogenerator-api-openapi.yml
+  - type: Documentation
+    url: https://docs.prezent.ai/
+  - type: APIReference
+    url: https://docs.prezent.ai/api-reference
+- aid: prezent:prezent-file-access-api
+  name: Prezent File Access API
+  description: Mint short-lived access tokens for the caller's stored files.
+  humanURL: https://docs.prezent.ai/
+  baseURL: https://api.prezent.ai
+  tags:
+  - File Access
+  properties:
+  - type: OpenAPI
+    url: openapi/prezent-file-access-api-openapi.yml
+  - type: Documentation
+    url: https://docs.prezent.ai/
+  - type: APIReference
+    url: https://docs.prezent.ai/api-reference
+- aid: prezent:prezent-health-api
+  name: Prezent Health API
+  description: Liveness and component health-check endpoints.
+  humanURL: https://docs.prezent.ai/
+  baseURL: https://api.prezent.ai
+  tags:
+  - Health
+  properties:
+  - type: OpenAPI
+    url: openapi/prezent-health-api-openapi.yml
+  - type: Documentation
+    url: https://docs.prezent.ai/
+  - type: APIReference
+    url: https://docs.prezent.ai/api-reference
+- aid: prezent:prezent-streaming-api
+  name: Prezent Streaming API
+  description: >-
+    Open a Server-Sent Events stream to receive real-time progress events as Prezent generates a presentation.
+    See the [Streaming guide](/docs/streaming) for a full walk-through plus reconnect semantics.
+  humanURL: https://docs.prezent.ai/
+  baseURL: https://api.prezent.ai
+  tags:
+  - Streaming
+  properties:
+  - type: OpenAPI
+    url: openapi/prezent-streaming-api-openapi.yml
+  - type: Documentation
+    url: https://docs.prezent.ai/
+  - type: APIReference
+    url: https://docs.prezent.ai/api-reference
+- aid: prezent:prezent-template-converter-api
+  name: Prezent Template Converter API
+  description: >-
+    Apply a target brand template to an uploaded presentation, including review suggestions, work-area
+    adjustment, layout change, and download.
+  humanURL: https://docs.prezent.ai/
+  baseURL: https://api.prezent.ai
+  tags:
+  - Template Converter
+  properties:
+  - type: OpenAPI
+    url: openapi/prezent-template-converter-api-openapi.yml
+  - type: Documentation
+    url: https://docs.prezent.ai/
+  - type: APIReference
+    url: https://docs.prezent.ai/api-reference
+- aid: prezent:prezent-themes-api
+  name: Prezent Themes API
+  description: List the presentation themes (brand templates) configured for the caller's company.
+  humanURL: https://docs.prezent.ai/
+  baseURL: https://api.prezent.ai
+  tags:
+  - Themes
+  properties:
+  - type: OpenAPI
+    url: openapi/prezent-themes-api-openapi.yml
+  - type: Documentation
+    url: https://docs.prezent.ai/
+  - type: APIReference
+    url: https://docs.prezent.ai/api-reference
+- aid: prezent:prezent-upload-api
+  name: Prezent Upload API
+  description: Validate, preprocess, and upload supporting files (PowerPoint, PDF, images, etc.).
+  humanURL: https://docs.prezent.ai/
+  baseURL: https://api.prezent.ai
+  tags:
+  - Upload
+  properties:
+  - type: OpenAPI
+    url: openapi/prezent-upload-api-openapi.yml
+  - type: Documentation
+    url: https://docs.prezent.ai/
+  - type: APIReference
+    url: https://docs.prezent.ai/api-reference
+- aid: prezent:prezent-webhooks-api
+  name: Prezent Webhooks API
+  description: >-
+    Receive signed HTTPS callbacks when Prezent jobs complete or fail. Subscriptions are scoped per API
+    key, retried over a 21h window, and auto-disabled after 50 consecutive failures. See the [Webhooks
+    guide](/docs/webhooks) for the signature format and verification examples.
+  humanURL: https://docs.prezent.ai/
+  baseURL: https://api.prezent.ai
+  tags:
+  - Webhooks
+  properties:
+  - type: OpenAPI
+    url: openapi/prezent-webhooks-api-openapi.yml
+  - type: Documentation
+    url: https://docs.prezent.ai/
+  - type: APIReference
+    url: https://docs.prezent.ai/api-reference
 maintainers:
 - FN: Kin Lane
   email: kin@apievangelist.com
 - FN: APIs.json
   email: info@apis.io
+x-enrichment:
+  date: '2026-07-20'
+  status: enriched
+  artifacts_added: 23
+  pass: local-v1
 common:
+- type: PostmanWorkspace
+  url: https://www.postman.com/kinlaneapi/prezent/overview
 - type: Website
   url: https://prezent.ai
+- type: DeveloperPortal
+  url: https://docs.prezent.ai/
+- type: Documentation
+  url: https://docs.prezent.ai/
+- type: APIReference
+  url: https://docs.prezent.ai/api-reference
+- type: Support
+  url: https://prezent.ai/support
+- type: Blog
+  url: https://prezent.ai/blog
+- type: Pricing
+  url: https://prezent.ai/pricing
+- type: SignUp
+  url: https://prezent.ai/try-it-for-free
+- type: Login
+  url: https://teams.prezent.ai/signin
+- type: TermsOfService
+  url: https://prezent.ai/terms-of-service
+- type: PrivacyPolicy
+  url: https://prezent.ai/privacy-policy
+- type: Compliance
+  url: https://prezent.ai/security-compliance
+- type: Integrations
+  url: https://prezent.ai/integrations
+- type: OpenAPI
+  url: openapi/prezent-openapi-original.yml
+- type: MCPServer
+  url: mcp/prezent-mcp.yml
+- type: Packages
+  url: packages/prezent-packages.yml
+- type: SDKs
+  url: packages/prezent-packages.yml
+- type: WellKnown
+  url: well-known/prezent-well-known.yml
+- type: LLMsTxt
+  url: llms/prezent-llms.txt
+- type: Overlay
+  url: overlays/prezent-openapi-overlay.yaml
+- type: Conformance
+  url: conformance/prezent-conformance.yml
+- type: ErrorCatalog
+  url: errors/prezent-error-codes.yml
+- type: Lifecycle
+  url: lifecycle/prezent-lifecycle.yml
+- type: Deprecation
+  url: lifecycle/prezent-lifecycle.yml
+- type: Conventions
+  url: conventions/prezent-conventions.yml
+- type: Idempotency
+  url: conventions/prezent-conventions.yml
+- type: RateLimits
+  url: rate-limits/prezent-rate-limits.yml
+- type: Webhooks
+  url: asyncapi/prezent-webhooks.yml
+- type: DataModel
+  url: data-model/prezent-data-model.yml
+- type: Sandbox
+  url: sandbox/prezent-sandbox.yml
+- type: AgentSkill
+  url: skills/_index.yml
+- type: Authentication
+  url: authentication/prezent-authentication.yml
+- type: AgenticAccess
+  url: agentic-access/prezent-agentic-access.yml
+- type: TrustCenter
+  url: security/prezent-trust-center.yml
+- type: DomainSecurity
+  url: security/prezent-domain-security.yml

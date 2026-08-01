@@ -1,0 +1,28 @@
+generated: '2026-07-20'
+method: searched
+source: https://docs.prezent.ai/ ; PyPI ; npm
+packages:
+  - language: python
+    registry: pypi
+    name: prezent-sdk
+    url: https://pypi.org/project/prezent-sdk/
+    install: pip install prezent-sdk
+    version: 0.1.1
+    summary: Prezent Platform API — typed Python REST client, generated from and versioned against the OpenAPI.
+    official: true
+  - language: typescript
+    registry: npm
+    name: prezent-sdk
+    url: https://www.npmjs.com/package/prezent-sdk
+    install: npm install prezent-sdk
+    version: 0.1.0
+    summary: OpenAPI client for the Prezent Platform API (TypeScript/JavaScript).
+    official: true
+  - language: python
+    registry: pypi
+    name: prezent-mcp-server
+    url: https://pypi.org/project/prezent-mcp-server/
+    install: pip install prezent-mcp-server
+    version: 0.1.32
+    summary: Local stdio MCP server for creating presentations using the Prezent API (Claude Desktop, Cursor, Cline, Continue, Zed).
+    official: true

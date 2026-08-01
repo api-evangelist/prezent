@@ -1,0 +1,54 @@
+generated: '2026-07-20'
+method: searched
+source: https://docs.prezent.ai/ ; openapi/prezent-openapi-original.yml (info.description + components)
+authentication:
+  style: bearer-api-key
+  header: 'Authorization: Bearer <api_key>'
+  notes: >
+    Keys issued by Customer Success, scoped to an allow-list of endpoint paths; an out-of-scope
+    call returns 404 ENDPOINT_NOT_FOUND. The AWS x-api-key header is NOT accepted. Expired keys
+    return 401 EXPIRED_API_KEY. MCP access uses OAuth 2.1 (Cognito) instead.
+  ref: authentication/prezent-authentication.yml
+idempotency:
+  supported: true
+  header: Idempotency-Key
+  scope: mutating (POST/PUT/PATCH) requests
+  retention: 24h
+  replay_header: 'Idempotency-Replayed: true'
+  conflict: 409 IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_BODY
+  recommendation: client-generated UUID
+pagination:
+  style: cursor
+  opt_in: true
+  params: [limit, cursor]
+  applies_to: list endpoints
+async:
+  pattern: callback-poll
+  detail: >
+    Long-running work (autogeneration, template conversion) returns a callback_id; the client polls
+    a status endpoint. Template Converter canonical poll is GET /api/v2/template-converter/status/{callback_id}
+    with strict HTTP-status mapping (200 only on success). Completion is also delivered via webhooks.
+error_envelope:
+  shape: '{ "success": false, "data": null, "error": { "code": "...", "message": "...", "details": { ... } } }'
+  success_shape: '{ "success": true, "data": { ... } }'
+  catalog: errors/prezent-error-codes.yml
+rate_limits:
+  gateway: {sustained: 10 req/s, burst: 5, daily: 1000 req/day per key}
+  per_company_per_category: 60-second sliding windows
+  annual_quota: {slide_generations: 50000/yr, downloads: 1000000/yr}
+  signal_headers: [X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After]
+  breach_codes: [TOO_MANY_REQUESTS, RATE_LIMIT_EXCEEDED, USAGE_LIMIT_EXCEEDED]
+  ref: rate-limits/prezent-rate-limits.yml
+versioning:
+  scheme: uri-path
+  current: v1 (v2 for Template Converter status)
+  aliases: >
+    REST-resource paths (/api/v1/autogenerations, /api/v1/template-conversions) supersede legacy
+    RPC paths (/api/v1/autogenerator/*, /api/v1/template-converter/*), which are served indefinitely
+    and return a Deprecation: true header pointing to the successor alias.
+  ref: lifecycle/prezent-lifecycle.yml
+cross_links:
+  errors: errors/prezent-error-codes.yml
+  lifecycle: lifecycle/prezent-lifecycle.yml
+  authentication: authentication/prezent-authentication.yml
+  rate_limits: rate-limits/prezent-rate-limits.yml

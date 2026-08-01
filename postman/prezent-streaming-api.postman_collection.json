@@ -1,0 +1,681 @@
+{
+  "info": {
+    "_postman_id": "1aeca621-13fa-4fde-89a9-7e3649d5e236",
+    "name": "Prezent Platform Audiences Streaming API",
+    "description": "The Prezent Platform API exposes Prezent's AutoGenerator, Template Converter,\nAudiences, Themes, and File-upload services as a uniform JSON HTTP API.\n\nThis contract describes the **target agent-ready shape** of the API: every\ndocumented endpoint returns a uniform success envelope `{ \"success\": true,\n\"data\": { ... } }` or a uniform error envelope `{ \"success\": false,\n\"data\": null, \"error\": { \"code\": \"...\", \"message\": \"...\", \"details\": { ... } } }`.\nError codes are drawn from a stable catalog (see `ErrorCode`). The contract\nis additive: handlers may continue to emit legacy keys alongside the\ndocumented ones for backwards compatibility, so schemas explicitly allow\nadditional properties at the envelope and data levels.\n\nSeveral endpoints kick off long-running background work and return a\n`callback_id` that the client polls against a corresponding status\nendpoint. The canonical async polling endpoint for the Template Converter\nfamily is **`GET /api/v2/template-converter/status/{callback_id}`** which\nuses strict HTTP-status mapping (200 only on workflow success, 4xx/5xx on\nworkflow failure). The v1 polling endpoint at\n`/api/v1/template-converter/status/{callbackId}` (and its REST alias\n`GET /api/v1/template-conversions/{callback_id}`) continues to be served\nwith legacy semantics (HTTP 200 with `status` field) and is intentionally\nomitted from this documentation.\n\n**REST resource aliases (v1.1).** AutoGenerator and Template Converter\nendpoints are documented here under their REST-resource path names\n(`/api/v1/autogenerations`, `/api/v1/template-conversions`). The legacy\nRPC-style paths under `/api/v1/autogenerator/*` and\n`/api/v1/template-converter/*` continue to be served indefinitely; they\nreturn a `Deprecation: true` header pointing to the successor alias.\n\n**Conventions that apply to every endpoint** (full reference in the\ncompanion guides on this documentation site):\n\n- **Auth:** API key as a Bearer token \u2014 `Authorization: Bearer <key>`.\n  Each key is scoped to an allow-list of endpoint paths; an out-of-scope\n  call returns `404 ENDPOINT_NOT_FOUND`.\n- **Rate limits:** gateway throttle 10 req/s sustained, 5 burst,\n  1,000 req/day per key; per-company per-category 60-second sliding\n  windows; annual quotas (50,000 slide generations/yr, 1,000,000\n  downloads/yr). Limit breaches return `429` with `error.code`\n  `TOO_MANY_REQUESTS` (gateway), `RATE_LIMIT_EXCEEDED` (per-category),\n  or `USAGE_LIMIT_EXCEEDED` (annual).\n- **Errors:** every error uses the `{ success:false, data:null, error:{\n  code, message, details } }` envelope with stable, documented `code`\n  values.\n- **Idempotency & pagination:** mutating requests accept an\n  `Idempotency-Key`; list endpoints accept opt-in `limit`/`cursor`\n  paging.\n\n**Building with an AI agent?** Prezent ships a first-class Model Context\nProtocol (MCP) server. The hosted endpoint is\n`https://mcp.myprezent.com/mcp` (OAuth 2.1, works with Claude.ai Custom\nConnectors); a local stdio server is published on PyPI as\n`prezent-mcp-server` and plugs into Claude Desktop, Cursor, Cline,\nContinue, and Zed. The MCP tools wrap the same REST endpoints\ndescribed here.\n\n**Official SDKs.** Typed REST clients are published for Python and\nTypeScript (`prezent-sdk`) \u2014 generated from and versioned against this\nspec. For other languages, generate a client from this document.\n\n**Out of scope of this document:** SCIM endpoints under `/api/v1/scim/*`.\nThose endpoints conform to RFC 7644 (SCIM 2.0) and follow a different\nenvelope (`schemas`, `Resources`, `totalResults`, etc.). They are\ndocumented separately at /docs/scim-user-management.\n\n\nContact Support:\n Name: Prezent API Support\n Email: support@prezent.ai",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "createdAt": "2026-07-28T02:40:32.000Z",
+    "updatedAt": "2026-07-28T02:40:32.000Z",
+    "lastUpdatedBy": "35240",
+    "uid": "35240-1aeca621-13fa-4fde-89a9-7e3649d5e236"
+  },
+  "item": [
+    {
+      "name": "api",
+      "item": [
+        {
+          "name": "v1",
+          "item": [
+            {
+              "name": "streams",
+              "item": [
+                {
+                  "name": "sessions",
+                  "item": [
+                    {
+                      "name": "Open a stream session for an existing job",
+                      "id": "23d4e22c-cf4a-4068-a496-14ea4cb25132",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
+                      "request": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"callback_id\": \"<string>\"\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/streams/sessions",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "streams",
+                            "sessions"
+                          ]
+                        },
+                        "description": "Returns a short-lived URL (5-minute TTL) that you open with\nEventSource (or any SSE client) to receive a live feed of\nprogress events for the job identified by `callback_id`. The\ntoken in the URL is bound to your API key and to that\n`callback_id` only.\n\nSee the [Streaming guide](/docs/streaming) for the full\nwalk-through, the event catalog, and reconnect semantics.\n"
+                      },
+                      "response": [
+                        {
+                          "id": "5371ed38-8d61-4988-9317-f520eefa334b",
+                          "name": "A streaming URL has been minted.",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"callback_id\": \"<string>\"\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/streams/sessions",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "streams",
+                                "sessions"
+                              ]
+                            }
+                          },
+                          "status": "Created",
+                          "code": 201,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {\n    \"session_id\": \"<string>\",\n    \"stream_url\": \"<uri>\",\n    \"expires_at\": \"<dateTime>\"\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:32.000Z",
+                          "updatedAt": "2026-07-28T02:40:32.000Z",
+                          "uid": "35240-5371ed38-8d61-4988-9317-f520eefa334b"
+                        },
+                        {
+                          "id": "3c55b48e-b04d-4881-bde1-5460fd4c14b7",
+                          "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DET",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"callback_id\": \"<string>\"\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/streams/sessions",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "streams",
+                                "sessions"
+                              ]
+                            }
+                          },
+                          "status": "Bad Request",
+                          "code": 400,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"API_REQUEST_FAILED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"non_736\": -58653497,\n      \"aliquip_cb\": \"est amet\"\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:32.000Z",
+                          "updatedAt": "2026-07-28T02:40:32.000Z",
+                          "uid": "35240-3c55b48e-b04d-4881-bde1-5460fd4c14b7"
+                        },
+                        {
+                          "id": "114342ab-2ddb-4a70-8803-e3d0d4205781",
+                          "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"callback_id\": \"<string>\"\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/streams/sessions",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "streams",
+                                "sessions"
+                              ]
+                            }
+                          },
+                          "status": "Unauthorized",
+                          "code": 401,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"API_REQUEST_FAILED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"non_736\": -58653497,\n      \"aliquip_cb\": \"est amet\"\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:32.000Z",
+                          "updatedAt": "2026-07-28T02:40:32.000Z",
+                          "uid": "35240-114342ab-2ddb-4a70-8803-e3d0d4205781"
+                        },
+                        {
+                          "id": "6962a73d-ad6a-4f1c-bdfd-62eefce88cdc",
+                          "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"callback_id\": \"<string>\"\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/streams/sessions",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "streams",
+                                "sessions"
+                              ]
+                            }
+                          },
+                          "status": "Forbidden",
+                          "code": 403,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"API_REQUEST_FAILED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"non_736\": -58653497,\n      \"aliquip_cb\": \"est amet\"\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:32.000Z",
+                          "updatedAt": "2026-07-28T02:40:32.000Z",
+                          "uid": "35240-6962a73d-ad6a-4f1c-bdfd-62eefce88cdc"
+                        },
+                        {
+                          "id": "3ee9c443-83bc-4c55-8038-60aed6980c53",
+                          "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"callback_id\": \"<string>\"\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/streams/sessions",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "streams",
+                                "sessions"
+                              ]
+                            }
+                          },
+                          "status": "Not Found",
+                          "code": 404,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"API_REQUEST_FAILED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"non_736\": -58653497,\n      \"aliquip_cb\": \"est amet\"\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:32.000Z",
+                          "updatedAt": "2026-07-28T02:40:32.000Z",
+                          "uid": "35240-3ee9c443-83bc-4c55-8038-60aed6980c53"
+                        },
+                        {
+                          "id": "1381da60-ed44-4ef5-9067-10b37bbd830e",
+                          "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gate",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"callback_id\": \"<string>\"\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/streams/sessions",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "streams",
+                                "sessions"
+                              ]
+                            }
+                          },
+                          "status": "Too Many Requests",
+                          "code": 429,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            },
+                            {
+                              "disabled": false,
+                              "description": {
+                                "content": "",
+                                "type": "text/plain"
+                              },
+                              "key": "X-RateLimit-Limit",
+                              "value": ""
+                            },
+                            {
+                              "disabled": false,
+                              "description": {
+                                "content": "",
+                                "type": "text/plain"
+                              },
+                              "key": "X-RateLimit-Remaining",
+                              "value": ""
+                            },
+                            {
+                              "disabled": false,
+                              "description": {
+                                "content": "",
+                                "type": "text/plain"
+                              },
+                              "key": "X-RateLimit-Reset",
+                              "value": ""
+                            },
+                            {
+                              "disabled": false,
+                              "description": {
+                                "content": "",
+                                "type": "text/plain"
+                              },
+                              "key": "Retry-After",
+                              "value": ""
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"API_REQUEST_FAILED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"non_736\": -58653497,\n      \"aliquip_cb\": \"est amet\"\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:32.000Z",
+                          "updatedAt": "2026-07-28T02:40:32.000Z",
+                          "uid": "35240-1381da60-ed44-4ef5-9067-10b37bbd830e"
+                        },
+                        {
+                          "id": "ed2a05bf-3884-46c1-84dc-cd8d59ba635f",
+                          "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"callback_id\": \"<string>\"\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/streams/sessions",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "streams",
+                                "sessions"
+                              ]
+                            }
+                          },
+                          "status": "Internal Server Error",
+                          "code": 500,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"API_REQUEST_FAILED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"non_736\": -58653497,\n      \"aliquip_cb\": \"est amet\"\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:32.000Z",
+                          "updatedAt": "2026-07-28T02:40:32.000Z",
+                          "uid": "35240-ed2a05bf-3884-46c1-84dc-cd8d59ba635f"
+                        },
+                        {
+                          "id": "64be1297-97f8-4d19-b389-3b078e61a1e6",
+                          "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"callback_id\": \"<string>\"\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/streams/sessions",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "streams",
+                                "sessions"
+                              ]
+                            }
+                          },
+                          "status": "Service Unavailable",
+                          "code": 503,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"API_REQUEST_FAILED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"non_736\": -58653497,\n      \"aliquip_cb\": \"est amet\"\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:32.000Z",
+                          "updatedAt": "2026-07-28T02:40:32.000Z",
+                          "uid": "35240-64be1297-97f8-4d19-b389-3b078e61a1e6"
+                        },
+                        {
+                          "id": "dacbf3e5-f286-48e6-9843-ae79d3142df1",
+                          "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"callback_id\": \"<string>\"\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/streams/sessions",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "streams",
+                                "sessions"
+                              ]
+                            }
+                          },
+                          "status": "Gateway Timeout",
+                          "code": 504,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"API_REQUEST_FAILED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"non_736\": -58653497,\n      \"aliquip_cb\": \"est amet\"\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:32.000Z",
+                          "updatedAt": "2026-07-28T02:40:32.000Z",
+                          "uid": "35240-dacbf3e5-f286-48e6-9843-ae79d3142df1"
+                        }
+                      ],
+                      "createdAt": "2026-07-28T02:40:32.000Z",
+                      "updatedAt": "2026-07-28T02:40:32.000Z",
+                      "uid": "35240-23d4e22c-cf4a-4068-a496-14ea4cb25132"
+                    }
+                  ],
+                  "id": "b15600a9-f8cd-499f-a1d9-08b982288b1c",
+                  "createdAt": "2026-07-28T02:40:32.000Z",
+                  "updatedAt": "2026-07-28T02:40:32.000Z",
+                  "uid": "35240-b15600a9-f8cd-499f-a1d9-08b982288b1c"
+                }
+              ],
+              "id": "2811160d-f7c9-4c1d-a6c3-4099d014fe29",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-2811160d-f7c9-4c1d-a6c3-4099d014fe29"
+            }
+          ],
+          "id": "518c5244-3e59-4ef0-8e6f-3b70a72b42f1",
+          "createdAt": "2026-07-28T02:40:32.000Z",
+          "updatedAt": "2026-07-28T02:40:32.000Z",
+          "uid": "35240-518c5244-3e59-4ef0-8e6f-3b70a72b42f1"
+        }
+      ],
+      "id": "828f3c76-c91e-4ed1-b74d-9cc9b8d01669",
+      "createdAt": "2026-07-28T02:40:32.000Z",
+      "updatedAt": "2026-07-28T02:40:32.000Z",
+      "uid": "35240-828f3c76-c91e-4ed1-b74d-9cc9b8d01669"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.prezent.ai"
+    }
+  ]
+}

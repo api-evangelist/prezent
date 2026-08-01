@@ -1,0 +1,46 @@
+generated: '2026-07-20'
+method: searched
+source: openapi/prezent-openapi-original.yml ; https://docs.prezent.ai/ ; https://www.prezent.ai/security-compliance
+standards:
+  - id: oauth2.1
+    conforms: true
+    evidence: MCP server uses OAuth 2.1 authorization-code + PKCE (Cognito-backed).
+  - id: rfc8414-oauth-authorization-server-metadata
+    conforms: true
+    evidence: mcp.myprezent.com/.well-known/oauth-authorization-server returns 200.
+  - id: rfc9728-oauth-protected-resource-metadata
+    conforms: true
+    evidence: mcp.myprezent.com/.well-known/oauth-protected-resource returns 200.
+  - id: rfc7591-dynamic-client-registration
+    conforms: true
+    evidence: MCP docs advertise /oauth/register dynamic client registration.
+  - id: scim2.0
+    conforms: true
+    evidence: SCIM User Management API under /api/v1/scim/* conforms to RFC 7644 (documented at /docs/scim-user-management).
+  - id: rfc7644-scim-protocol
+    conforms: true
+    evidence: SCIM envelope (schemas, Resources, totalResults) per RFC 7644.
+  - id: rfc8594-deprecation-header
+    conforms: partial
+    evidence: legacy alias paths return a Deprecation header; no Sunset header observed.
+  - id: idempotency-key
+    conforms: true
+    evidence: Idempotency-Key header, 24h replay cache, 409 on body mismatch.
+  - id: mcp
+    conforms: true
+    evidence: first-class hosted + stdio Model Context Protocol server (11 tools).
+  - id: soc2-type2
+    conforms: true
+    evidence: SOC 2 Type 2 listed on security-compliance page.
+  - id: iso-27001
+    conforms: true
+    evidence: ISO/IEC 27001:2023 listed on security-compliance page.
+  - id: gdpr
+    conforms: true
+    evidence: GDPR compliance listed on security-compliance page.
+  - id: ccpa
+    conforms: true
+    evidence: CCPA compliance listed on security-compliance page.
+  - id: rfc9457-problem-details
+    conforms: false
+    evidence: uses a custom uniform envelope (success/data/error), not application/problem+json.

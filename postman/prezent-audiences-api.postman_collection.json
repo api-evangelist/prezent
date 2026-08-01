@@ -1,0 +1,1552 @@
+{
+  "info": {
+    "_postman_id": "09ab9b59-d15c-41f6-b26e-a1cca894d3ef",
+    "name": "Prezent Platform Audiences API",
+    "description": "The Prezent Platform API exposes Prezent's AutoGenerator, Template Converter,\nAudiences, Themes, and File-upload services as a uniform JSON HTTP API.\n\nThis contract describes the **target agent-ready shape** of the API: every\ndocumented endpoint returns a uniform success envelope `{ \"success\": true,\n\"data\": { ... } }` or a uniform error envelope `{ \"success\": false,\n\"data\": null, \"error\": { \"code\": \"...\", \"message\": \"...\", \"details\": { ... } } }`.\nError codes are drawn from a stable catalog (see `ErrorCode`). The contract\nis additive: handlers may continue to emit legacy keys alongside the\ndocumented ones for backwards compatibility, so schemas explicitly allow\nadditional properties at the envelope and data levels.\n\nSeveral endpoints kick off long-running background work and return a\n`callback_id` that the client polls against a corresponding status\nendpoint. The canonical async polling endpoint for the Template Converter\nfamily is **`GET /api/v2/template-converter/status/{callback_id}`** which\nuses strict HTTP-status mapping (200 only on workflow success, 4xx/5xx on\nworkflow failure). The v1 polling endpoint at\n`/api/v1/template-converter/status/{callbackId}` (and its REST alias\n`GET /api/v1/template-conversions/{callback_id}`) continues to be served\nwith legacy semantics (HTTP 200 with `status` field) and is intentionally\nomitted from this documentation.\n\n**REST resource aliases (v1.1).** AutoGenerator and Template Converter\nendpoints are documented here under their REST-resource path names\n(`/api/v1/autogenerations`, `/api/v1/template-conversions`). The legacy\nRPC-style paths under `/api/v1/autogenerator/*` and\n`/api/v1/template-converter/*` continue to be served indefinitely; they\nreturn a `Deprecation: true` header pointing to the successor alias.\n\n**Conventions that apply to every endpoint** (full reference in the\ncompanion guides on this documentation site):\n\n- **Auth:** API key as a Bearer token \u2014 `Authorization: Bearer <key>`.\n  Each key is scoped to an allow-list of endpoint paths; an out-of-scope\n  call returns `404 ENDPOINT_NOT_FOUND`.\n- **Rate limits:** gateway throttle 10 req/s sustained, 5 burst,\n  1,000 req/day per key; per-company per-category 60-second sliding\n  windows; annual quotas (50,000 slide generations/yr, 1,000,000\n  downloads/yr). Limit breaches return `429` with `error.code`\n  `TOO_MANY_REQUESTS` (gateway), `RATE_LIMIT_EXCEEDED` (per-category),\n  or `USAGE_LIMIT_EXCEEDED` (annual).\n- **Errors:** every error uses the `{ success:false, data:null, error:{\n  code, message, details } }` envelope with stable, documented `code`\n  values.\n- **Idempotency & pagination:** mutating requests accept an\n  `Idempotency-Key`; list endpoints accept opt-in `limit`/`cursor`\n  paging.\n\n**Building with an AI agent?** Prezent ships a first-class Model Context\nProtocol (MCP) server. The hosted endpoint is\n`https://mcp.myprezent.com/mcp` (OAuth 2.1, works with Claude.ai Custom\nConnectors); a local stdio server is published on PyPI as\n`prezent-mcp-server` and plugs into Claude Desktop, Cursor, Cline,\nContinue, and Zed. The MCP tools wrap the same REST endpoints\ndescribed here.\n\n**Official SDKs.** Typed REST clients are published for Python and\nTypeScript (`prezent-sdk`) \u2014 generated from and versioned against this\nspec. For other languages, generate a client from this document.\n\n**Out of scope of this document:** SCIM endpoints under `/api/v1/scim/*`.\nThose endpoints conform to RFC 7644 (SCIM 2.0) and follow a different\nenvelope (`schemas`, `Resources`, `totalResults`, etc.). They are\ndocumented separately at /docs/scim-user-management.\n\n\nContact Support:\n Name: Prezent API Support\n Email: support@prezent.ai",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "createdAt": "2026-07-28T02:40:11.000Z",
+    "updatedAt": "2026-07-28T02:40:12.000Z",
+    "lastUpdatedBy": "35240",
+    "uid": "35240-09ab9b59-d15c-41f6-b26e-a1cca894d3ef"
+  },
+  "item": [
+    {
+      "name": "api",
+      "item": [
+        {
+          "name": "v1",
+          "item": [
+            {
+              "name": "audiences",
+              "item": [
+                {
+                  "name": "search",
+                  "item": [
+                    {
+                      "name": "Search audience profiles",
+                      "id": "bff4af59-5173-4509-9fb1-62a028e80e38",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
+                      "request": {
+                        "method": "POST",
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "application/json"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": {
+                          "mode": "raw",
+                          "raw": "{\n  \"query\": \"<string>\",\n  \"id\": \"<string>\",\n  \"sort\": \"<string>\",\n  \"filterBy\": {\n    \"et_81\": \"nisi non ut\",\n    \"anim_d\": \"dolor in\",\n    \"cillumdd\": \"ea enim dolore ex cupidatat\"\n  },\n  \"filterByCollection\": {\n    \"consequat_fa\": -97716834.67044996,\n    \"Excepteur_10\": -83921581\n  },\n  \"fields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"extraFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"limit\": 15\n}",
+                          "options": {
+                            "raw": {
+                              "headerFamily": "json",
+                              "language": "json"
+                            }
+                          }
+                        },
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/audiences/search?feature=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "audiences",
+                            "search"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            }
+                          ]
+                        },
+                        "description": "Free-text and field-filtered search across audience profiles. Use\nthe request body's `limit` field to cap how many matches are\nreturned (most-relevant first) and the `filterBy*` fields to\nnarrow the search.\n"
+                      },
+                      "response": [
+                        {
+                          "id": "410ecd83-9842-4af2-b207-217b2ddb4a5a",
+                          "name": "Matching audiences returned.",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"query\": \"<string>\",\n  \"id\": \"<string>\",\n  \"sort\": \"<string>\",\n  \"filterBy\": {\n    \"et_81\": \"nisi non ut\",\n    \"anim_d\": \"dolor in\",\n    \"cillumdd\": \"ea enim dolore ex cupidatat\"\n  },\n  \"filterByCollection\": {\n    \"consequat_fa\": -97716834.67044996,\n    \"Excepteur_10\": -83921581\n  },\n  \"fields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"extraFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"limit\": 15\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/audiences/search?feature=<string>",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "audiences",
+                                "search"
+                              ],
+                              "query": [
+                                {
+                                  "description": "Filter by feature scope.",
+                                  "key": "feature",
+                                  "value": "<string>"
+                                }
+                              ]
+                            }
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"result\": [\n    {\n      \"id\": \"<string>\",\n      \"name\": \"<string>\"\n    },\n    {\n      \"id\": \"<string>\",\n      \"name\": \"<string>\"\n    }\n  ],\n  \"success\": \"<boolean>\",\n  \"items\": [\n    {\n      \"cillum32b\": -4788409,\n      \"laborum_10b\": false,\n      \"nisi_c\": 12448434\n    },\n    {\n      \"voluptateac\": -18184252.162062272\n    }\n  ],\n  \"next_cursor\": \"<string,null>\"\n}",
+                          "createdAt": "2026-07-28T02:40:12.000Z",
+                          "updatedAt": "2026-07-28T02:40:12.000Z",
+                          "uid": "35240-410ecd83-9842-4af2-b207-217b2ddb4a5a"
+                        },
+                        {
+                          "id": "5efa6834-b28c-445e-aad4-4efb9eb40e9c",
+                          "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DET",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"query\": \"<string>\",\n  \"id\": \"<string>\",\n  \"sort\": \"<string>\",\n  \"filterBy\": {\n    \"et_81\": \"nisi non ut\",\n    \"anim_d\": \"dolor in\",\n    \"cillumdd\": \"ea enim dolore ex cupidatat\"\n  },\n  \"filterByCollection\": {\n    \"consequat_fa\": -97716834.67044996,\n    \"Excepteur_10\": -83921581\n  },\n  \"fields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"extraFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"limit\": 15\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/audiences/search?feature=<string>",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "audiences",
+                                "search"
+                              ],
+                              "query": [
+                                {
+                                  "description": "Filter by feature scope.",
+                                  "key": "feature",
+                                  "value": "<string>"
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Bad Request",
+                          "code": 400,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:12.000Z",
+                          "updatedAt": "2026-07-28T02:40:12.000Z",
+                          "uid": "35240-5efa6834-b28c-445e-aad4-4efb9eb40e9c"
+                        },
+                        {
+                          "id": "cbd8e016-9676-400d-b8b8-05b8a0505696",
+                          "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"query\": \"<string>\",\n  \"id\": \"<string>\",\n  \"sort\": \"<string>\",\n  \"filterBy\": {\n    \"et_81\": \"nisi non ut\",\n    \"anim_d\": \"dolor in\",\n    \"cillumdd\": \"ea enim dolore ex cupidatat\"\n  },\n  \"filterByCollection\": {\n    \"consequat_fa\": -97716834.67044996,\n    \"Excepteur_10\": -83921581\n  },\n  \"fields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"extraFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"limit\": 15\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/audiences/search?feature=<string>",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "audiences",
+                                "search"
+                              ],
+                              "query": [
+                                {
+                                  "description": "Filter by feature scope.",
+                                  "key": "feature",
+                                  "value": "<string>"
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Unauthorized",
+                          "code": 401,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:12.000Z",
+                          "updatedAt": "2026-07-28T02:40:12.000Z",
+                          "uid": "35240-cbd8e016-9676-400d-b8b8-05b8a0505696"
+                        },
+                        {
+                          "id": "e1843013-145a-43c2-bbbe-a66ffa528bde",
+                          "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"query\": \"<string>\",\n  \"id\": \"<string>\",\n  \"sort\": \"<string>\",\n  \"filterBy\": {\n    \"et_81\": \"nisi non ut\",\n    \"anim_d\": \"dolor in\",\n    \"cillumdd\": \"ea enim dolore ex cupidatat\"\n  },\n  \"filterByCollection\": {\n    \"consequat_fa\": -97716834.67044996,\n    \"Excepteur_10\": -83921581\n  },\n  \"fields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"extraFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"limit\": 15\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/audiences/search?feature=<string>",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "audiences",
+                                "search"
+                              ],
+                              "query": [
+                                {
+                                  "description": "Filter by feature scope.",
+                                  "key": "feature",
+                                  "value": "<string>"
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Forbidden",
+                          "code": 403,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:12.000Z",
+                          "updatedAt": "2026-07-28T02:40:12.000Z",
+                          "uid": "35240-e1843013-145a-43c2-bbbe-a66ffa528bde"
+                        },
+                        {
+                          "id": "9950491e-53e5-4c27-8851-206d1debafd0",
+                          "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"query\": \"<string>\",\n  \"id\": \"<string>\",\n  \"sort\": \"<string>\",\n  \"filterBy\": {\n    \"et_81\": \"nisi non ut\",\n    \"anim_d\": \"dolor in\",\n    \"cillumdd\": \"ea enim dolore ex cupidatat\"\n  },\n  \"filterByCollection\": {\n    \"consequat_fa\": -97716834.67044996,\n    \"Excepteur_10\": -83921581\n  },\n  \"fields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"extraFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"limit\": 15\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/audiences/search?feature=<string>",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "audiences",
+                                "search"
+                              ],
+                              "query": [
+                                {
+                                  "description": "Filter by feature scope.",
+                                  "key": "feature",
+                                  "value": "<string>"
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Not Found",
+                          "code": 404,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:12.000Z",
+                          "updatedAt": "2026-07-28T02:40:12.000Z",
+                          "uid": "35240-9950491e-53e5-4c27-8851-206d1debafd0"
+                        },
+                        {
+                          "id": "69f68cd6-3df0-43d3-a955-2b8f40cb975b",
+                          "name": "Request was well-formed but failed semantic validation.\n`error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.\n",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"query\": \"<string>\",\n  \"id\": \"<string>\",\n  \"sort\": \"<string>\",\n  \"filterBy\": {\n    \"et_81\": \"nisi non ut\",\n    \"anim_d\": \"dolor in\",\n    \"cillumdd\": \"ea enim dolore ex cupidatat\"\n  },\n  \"filterByCollection\": {\n    \"consequat_fa\": -97716834.67044996,\n    \"Excepteur_10\": -83921581\n  },\n  \"fields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"extraFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"limit\": 15\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/audiences/search?feature=<string>",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "audiences",
+                                "search"
+                              ],
+                              "query": [
+                                {
+                                  "description": "Filter by feature scope.",
+                                  "key": "feature",
+                                  "value": "<string>"
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+                          "code": 422,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:12.000Z",
+                          "updatedAt": "2026-07-28T02:40:12.000Z",
+                          "uid": "35240-69f68cd6-3df0-43d3-a955-2b8f40cb975b"
+                        },
+                        {
+                          "id": "4756ea41-5b91-4a55-85d5-aced8d9f6439",
+                          "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gate",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"query\": \"<string>\",\n  \"id\": \"<string>\",\n  \"sort\": \"<string>\",\n  \"filterBy\": {\n    \"et_81\": \"nisi non ut\",\n    \"anim_d\": \"dolor in\",\n    \"cillumdd\": \"ea enim dolore ex cupidatat\"\n  },\n  \"filterByCollection\": {\n    \"consequat_fa\": -97716834.67044996,\n    \"Excepteur_10\": -83921581\n  },\n  \"fields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"extraFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"limit\": 15\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/audiences/search?feature=<string>",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "audiences",
+                                "search"
+                              ],
+                              "query": [
+                                {
+                                  "description": "Filter by feature scope.",
+                                  "key": "feature",
+                                  "value": "<string>"
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Too Many Requests",
+                          "code": 429,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            },
+                            {
+                              "disabled": false,
+                              "description": {
+                                "content": "",
+                                "type": "text/plain"
+                              },
+                              "key": "X-RateLimit-Limit",
+                              "value": ""
+                            },
+                            {
+                              "disabled": false,
+                              "description": {
+                                "content": "",
+                                "type": "text/plain"
+                              },
+                              "key": "X-RateLimit-Remaining",
+                              "value": ""
+                            },
+                            {
+                              "disabled": false,
+                              "description": {
+                                "content": "",
+                                "type": "text/plain"
+                              },
+                              "key": "X-RateLimit-Reset",
+                              "value": ""
+                            },
+                            {
+                              "disabled": false,
+                              "description": {
+                                "content": "",
+                                "type": "text/plain"
+                              },
+                              "key": "Retry-After",
+                              "value": ""
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:12.000Z",
+                          "updatedAt": "2026-07-28T02:40:12.000Z",
+                          "uid": "35240-4756ea41-5b91-4a55-85d5-aced8d9f6439"
+                        },
+                        {
+                          "id": "98ee8ebc-949f-4002-aee2-ad0cc16e1cf1",
+                          "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"query\": \"<string>\",\n  \"id\": \"<string>\",\n  \"sort\": \"<string>\",\n  \"filterBy\": {\n    \"et_81\": \"nisi non ut\",\n    \"anim_d\": \"dolor in\",\n    \"cillumdd\": \"ea enim dolore ex cupidatat\"\n  },\n  \"filterByCollection\": {\n    \"consequat_fa\": -97716834.67044996,\n    \"Excepteur_10\": -83921581\n  },\n  \"fields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"extraFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"limit\": 15\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/audiences/search?feature=<string>",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "audiences",
+                                "search"
+                              ],
+                              "query": [
+                                {
+                                  "description": "Filter by feature scope.",
+                                  "key": "feature",
+                                  "value": "<string>"
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Internal Server Error",
+                          "code": 500,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:12.000Z",
+                          "updatedAt": "2026-07-28T02:40:12.000Z",
+                          "uid": "35240-98ee8ebc-949f-4002-aee2-ad0cc16e1cf1"
+                        },
+                        {
+                          "id": "92a23a4f-07e9-4361-ab94-9e13619074b0",
+                          "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"query\": \"<string>\",\n  \"id\": \"<string>\",\n  \"sort\": \"<string>\",\n  \"filterBy\": {\n    \"et_81\": \"nisi non ut\",\n    \"anim_d\": \"dolor in\",\n    \"cillumdd\": \"ea enim dolore ex cupidatat\"\n  },\n  \"filterByCollection\": {\n    \"consequat_fa\": -97716834.67044996,\n    \"Excepteur_10\": -83921581\n  },\n  \"fields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"extraFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"limit\": 15\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/audiences/search?feature=<string>",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "audiences",
+                                "search"
+                              ],
+                              "query": [
+                                {
+                                  "description": "Filter by feature scope.",
+                                  "key": "feature",
+                                  "value": "<string>"
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Service Unavailable",
+                          "code": 503,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:12.000Z",
+                          "updatedAt": "2026-07-28T02:40:12.000Z",
+                          "uid": "35240-92a23a4f-07e9-4361-ab94-9e13619074b0"
+                        },
+                        {
+                          "id": "06e6c195-d2e5-4298-8ee5-f5c85c072f6f",
+                          "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+                          "originalRequest": {
+                            "method": "POST",
+                            "header": [
+                              {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                              },
+                              {
+                                "key": "Accept",
+                                "value": "application/json"
+                              },
+                              {
+                                "description": "Added as a part of security scheme: bearer",
+                                "key": "Authorization",
+                                "value": "Bearer <token>"
+                              }
+                            ],
+                            "body": {
+                              "mode": "raw",
+                              "raw": "{\n  \"query\": \"<string>\",\n  \"id\": \"<string>\",\n  \"sort\": \"<string>\",\n  \"filterBy\": {\n    \"et_81\": \"nisi non ut\",\n    \"anim_d\": \"dolor in\",\n    \"cillumdd\": \"ea enim dolore ex cupidatat\"\n  },\n  \"filterByCollection\": {\n    \"consequat_fa\": -97716834.67044996,\n    \"Excepteur_10\": -83921581\n  },\n  \"fields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"extraFields\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"limit\": 15\n}",
+                              "options": {
+                                "raw": {
+                                  "headerFamily": "json",
+                                  "language": "json"
+                                }
+                              }
+                            },
+                            "url": {
+                              "raw": "{{baseUrl}}/api/v1/audiences/search?feature=<string>",
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "path": [
+                                "api",
+                                "v1",
+                                "audiences",
+                                "search"
+                              ],
+                              "query": [
+                                {
+                                  "description": "Filter by feature scope.",
+                                  "key": "feature",
+                                  "value": "<string>"
+                                }
+                              ]
+                            }
+                          },
+                          "status": "Gateway Timeout",
+                          "code": 504,
+                          "_postman_previewlanguage": "json",
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "application/json"
+                            }
+                          ],
+                          "cookie": [],
+                          "responseTime": null,
+                          "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                          "createdAt": "2026-07-28T02:40:12.000Z",
+                          "updatedAt": "2026-07-28T02:40:12.000Z",
+                          "uid": "35240-06e6c195-d2e5-4298-8ee5-f5c85c072f6f"
+                        }
+                      ],
+                      "createdAt": "2026-07-28T02:40:12.000Z",
+                      "updatedAt": "2026-07-28T02:40:12.000Z",
+                      "uid": "35240-bff4af59-5173-4509-9fb1-62a028e80e38"
+                    }
+                  ],
+                  "id": "cc07d142-4398-4d2a-a0e3-d9977098d0bb",
+                  "createdAt": "2026-07-28T02:40:12.000Z",
+                  "updatedAt": "2026-07-28T02:40:12.000Z",
+                  "uid": "35240-cc07d142-4398-4d2a-a0e3-d9977098d0bb"
+                },
+                {
+                  "name": "List audience profiles",
+                  "id": "67c83a1a-5f80-480f-a219-29c88c20664c",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/v1/audiences?feature=<string>&id=<string>&sort=<string>&limit=50&cursor=<string>",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "audiences"
+                      ],
+                      "query": [
+                        {
+                          "description": "Filter by feature scope.",
+                          "key": "feature",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Filter to a single audience by id.",
+                          "key": "id",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Sort expression (for example `name:asc`).",
+                          "key": "sort",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                          "key": "limit",
+                          "value": "50"
+                        },
+                        {
+                          "description": "Opaque cursor from a previous response's `next_cursor`.",
+                          "key": "cursor",
+                          "value": "<string>"
+                        }
+                      ]
+                    },
+                    "description": "Returns the audiences configured for the caller's company.\n\n**Pagination is opt-in.** Send `limit` (and follow `next_cursor`)\nto page; omit both `limit` and `cursor` to receive the full list\nunchanged.\n"
+                  },
+                  "response": [
+                    {
+                      "id": "da6af249-0f1a-46bc-8d75-52896c6ebf58",
+                      "name": "Audiences returned.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/audiences?feature=<string>&id=<string>&sort=<string>&limit=50&cursor=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "audiences"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter to a single audience by id.",
+                              "key": "id",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"result\": [\n    {\n      \"id\": \"<string>\",\n      \"name\": \"<string>\"\n    },\n    {\n      \"id\": \"<string>\",\n      \"name\": \"<string>\"\n    }\n  ],\n  \"success\": \"<boolean>\",\n  \"items\": [\n    {\n      \"cillum32b\": -4788409,\n      \"laborum_10b\": false,\n      \"nisi_c\": 12448434\n    },\n    {\n      \"voluptateac\": -18184252.162062272\n    }\n  ],\n  \"next_cursor\": \"<string,null>\"\n}",
+                      "createdAt": "2026-07-28T02:40:12.000Z",
+                      "updatedAt": "2026-07-28T02:40:12.000Z",
+                      "uid": "35240-da6af249-0f1a-46bc-8d75-52896c6ebf58"
+                    },
+                    {
+                      "id": "8a076275-4841-4104-9545-f51343c27634",
+                      "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DET",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/audiences?feature=<string>&id=<string>&sort=<string>&limit=50&cursor=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "audiences"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter to a single audience by id.",
+                              "key": "id",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Bad Request",
+                      "code": 400,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:12.000Z",
+                      "updatedAt": "2026-07-28T02:40:12.000Z",
+                      "uid": "35240-8a076275-4841-4104-9545-f51343c27634"
+                    },
+                    {
+                      "id": "428b0096-099c-45f9-8c39-3b01916465be",
+                      "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/audiences?feature=<string>&id=<string>&sort=<string>&limit=50&cursor=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "audiences"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter to a single audience by id.",
+                              "key": "id",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Unauthorized",
+                      "code": 401,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:12.000Z",
+                      "updatedAt": "2026-07-28T02:40:12.000Z",
+                      "uid": "35240-428b0096-099c-45f9-8c39-3b01916465be"
+                    },
+                    {
+                      "id": "f5a6565a-fd37-4736-a5d7-b623480396cf",
+                      "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/audiences?feature=<string>&id=<string>&sort=<string>&limit=50&cursor=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "audiences"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter to a single audience by id.",
+                              "key": "id",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Forbidden",
+                      "code": 403,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:12.000Z",
+                      "updatedAt": "2026-07-28T02:40:12.000Z",
+                      "uid": "35240-f5a6565a-fd37-4736-a5d7-b623480396cf"
+                    },
+                    {
+                      "id": "b387306e-dad7-46a4-89be-ba7634f1393c",
+                      "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/audiences?feature=<string>&id=<string>&sort=<string>&limit=50&cursor=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "audiences"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter to a single audience by id.",
+                              "key": "id",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:12.000Z",
+                      "updatedAt": "2026-07-28T02:40:12.000Z",
+                      "uid": "35240-b387306e-dad7-46a4-89be-ba7634f1393c"
+                    },
+                    {
+                      "id": "ac799f19-bfdc-408a-8953-1e89d56395f0",
+                      "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gate",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/audiences?feature=<string>&id=<string>&sort=<string>&limit=50&cursor=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "audiences"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter to a single audience by id.",
+                              "key": "id",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Too Many Requests",
+                      "code": 429,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Limit",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Remaining",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Reset",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "Retry-After",
+                          "value": ""
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:12.000Z",
+                      "updatedAt": "2026-07-28T02:40:12.000Z",
+                      "uid": "35240-ac799f19-bfdc-408a-8953-1e89d56395f0"
+                    },
+                    {
+                      "id": "20bdb509-460c-4ad1-9b28-8b69822b781a",
+                      "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/audiences?feature=<string>&id=<string>&sort=<string>&limit=50&cursor=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "audiences"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter to a single audience by id.",
+                              "key": "id",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Internal Server Error",
+                      "code": 500,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:12.000Z",
+                      "updatedAt": "2026-07-28T02:40:12.000Z",
+                      "uid": "35240-20bdb509-460c-4ad1-9b28-8b69822b781a"
+                    },
+                    {
+                      "id": "bf18dfc8-6a99-4cda-bf88-13722759d608",
+                      "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/audiences?feature=<string>&id=<string>&sort=<string>&limit=50&cursor=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "audiences"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter to a single audience by id.",
+                              "key": "id",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Service Unavailable",
+                      "code": 503,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:12.000Z",
+                      "updatedAt": "2026-07-28T02:40:12.000Z",
+                      "uid": "35240-bf18dfc8-6a99-4cda-bf88-13722759d608"
+                    },
+                    {
+                      "id": "d32346f9-b429-47d9-b4d7-1d4cc2fc754d",
+                      "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/audiences?feature=<string>&id=<string>&sort=<string>&limit=50&cursor=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "audiences"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter to a single audience by id.",
+                              "key": "id",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Gateway Timeout",
+                      "code": 504,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MISSING_TEMPLATE_ID\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"nostrud10\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:12.000Z",
+                      "updatedAt": "2026-07-28T02:40:12.000Z",
+                      "uid": "35240-d32346f9-b429-47d9-b4d7-1d4cc2fc754d"
+                    }
+                  ],
+                  "createdAt": "2026-07-28T02:40:12.000Z",
+                  "updatedAt": "2026-07-28T02:40:12.000Z",
+                  "uid": "35240-67c83a1a-5f80-480f-a219-29c88c20664c"
+                }
+              ],
+              "id": "9c8ca08f-c210-4e6b-a7bc-7150d257e33a",
+              "createdAt": "2026-07-28T02:40:12.000Z",
+              "updatedAt": "2026-07-28T02:40:12.000Z",
+              "uid": "35240-9c8ca08f-c210-4e6b-a7bc-7150d257e33a"
+            }
+          ],
+          "id": "1f7f26f2-81cf-42ff-8531-cafb026937da",
+          "createdAt": "2026-07-28T02:40:12.000Z",
+          "updatedAt": "2026-07-28T02:40:12.000Z",
+          "uid": "35240-1f7f26f2-81cf-42ff-8531-cafb026937da"
+        }
+      ],
+      "id": "e20f0ff5-f234-450a-86ef-795f8da2222f",
+      "createdAt": "2026-07-28T02:40:12.000Z",
+      "updatedAt": "2026-07-28T02:40:12.000Z",
+      "uid": "35240-e20f0ff5-f234-450a-86ef-795f8da2222f"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.prezent.ai"
+    }
+  ]
+}

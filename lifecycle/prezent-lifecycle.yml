@@ -1,0 +1,22 @@
+generated: '2026-07-20'
+method: searched
+source: openapi/prezent-openapi-original.yml (info.description) ; https://docs.prezent.ai/
+versioning:
+  scheme: uri-path
+  current: v1
+  notes: Template Converter status polling is served at v2 (GET /api/v2/template-converter/status/{callback_id}).
+deprecation:
+  policy: >
+    Legacy RPC-style paths (/api/v1/autogenerator/*, /api/v1/template-converter/*) are superseded by
+    REST-resource aliases (/api/v1/autogenerations, /api/v1/template-conversions). The legacy paths are
+    served indefinitely and return a `Deprecation: true` response header pointing to the successor alias.
+  sunset_header: false
+  deprecation_header: true
+sla:
+  url: null
+  uptime_target: null
+status_page: null
+deprecated_operations: []
+notes: >
+  No public status page (status.prezent.ai did not resolve) and no published SLA/uptime target were
+  found. Deprecation is signalled per RFC-8594-style Deprecation header on legacy alias paths.

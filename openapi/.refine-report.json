@@ -1,0 +1,30 @@
+{
+  "provider": "prezent",
+  "sources": [
+    "prezent-audiences-api-openapi.yml",
+    "prezent-autogenerator-api-openapi.yml",
+    "prezent-file-access-api-openapi.yml",
+    "prezent-health-api-openapi.yml",
+    "prezent-streaming-api-openapi.yml",
+    "prezent-template-converter-api-openapi.yml",
+    "prezent-themes-api-openapi.yml",
+    "prezent-upload-api-openapi.yml",
+    "prezent-webhooks-api-openapi.yml"
+  ],
+  "outputs": [
+    "prezent-audiences-api-openapi.yml",
+    "prezent-autogenerator-api-openapi.yml",
+    "prezent-file-access-api-openapi.yml",
+    "prezent-health-api-openapi.yml",
+    "prezent-streaming-api-openapi.yml",
+    "prezent-template-converter-api-openapi.yml",
+    "prezent-themes-api-openapi.yml",
+    "prezent-upload-api-openapi.yml",
+    "prezent-webhooks-api-openapi.yml"
+  ],
+  "archived": [],
+  "errors": [],
+  "warnings": [],
+  "notes": [],
+  "skipped": []
+}

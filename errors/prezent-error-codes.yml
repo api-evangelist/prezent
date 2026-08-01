@@ -1,0 +1,47 @@
+generated: '2026-07-20'
+method: derived
+source: openapi/prezent-openapi-original.yml (components.schemas.ErrorCode)
+format: uniform-envelope
+envelope: '{ "success": false, "data": null, "error": { "code": "...", "message": "...", "details": { ... } } }'
+notes: >
+  Every error response uses the uniform envelope above with a stable `error.code` drawn from
+  the documented ErrorCode catalog. Rate-limit breaches also carry X-RateLimit-* and Retry-After
+  headers. Idempotency-key reuse with a different body returns 409 IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_BODY.
+error_codes:
+  - {code: INVALID_API_KEY, http: 401, area: auth}
+  - {code: EXPIRED_API_KEY, http: 401, area: auth}
+  - {code: UNAUTHORIZED, http: 401, area: auth}
+  - {code: FORBIDDEN, http: 403, area: auth}
+  - {code: ENDPOINT_NOT_FOUND, http: 404, area: auth, note: key not scoped to this path}
+  - {code: RESOURCE_NOT_FOUND, http: 404, area: request}
+  - {code: NOT_FOUND, http: 404, area: request}
+  - {code: METHOD_NOT_ALLOWED, http: 405, area: request}
+  - {code: UNSUPPORTED_FILE_TYPE, http: 415, area: upload}
+  - {code: INVALID_INPUT, http: 400, area: validation}
+  - {code: UNPROCESSABLE_ENTITY, http: 422, area: validation}
+  - {code: RATE_LIMIT_EXCEEDED, http: 429, area: throttle, note: per-category sliding window}
+  - {code: USAGE_LIMIT_EXCEEDED, http: 429, area: throttle, note: annual quota}
+  - {code: TOO_MANY_REQUESTS, http: 429, area: throttle, note: gateway throttle}
+  - {code: THROTTLED, http: 429, area: throttle}
+  - {code: BAD_REQUEST, http: 400, area: request}
+  - {code: INVALID_JSON, http: 400, area: request}
+  - {code: MISSING_REQUIRED_FIELD, http: 400, area: validation}
+  - {code: MISSING_QUERY_PARAM, http: 400, area: validation}
+  - {code: MISSING_CALLBACK_ID, http: 400, area: validation}
+  - {code: MISSING_SLIDES_ARRAY, http: 400, area: validation}
+  - {code: MISSING_PROMPT, http: 400, area: validation}
+  - {code: MISSING_TEMPLATE_ID, http: 400, area: validation}
+  - {code: MISSING_FILE_CONTENT, http: 400, area: validation}
+  - {code: MISSING_SHARE_DETAILS, http: 400, area: validation}
+  - {code: INVALID_TYPE, http: 400, area: validation}
+  - {code: INVALID_DATA, http: 400, area: validation}
+  - {code: INVALID_DATA_TYPE, http: 400, area: validation}
+  - {code: INVALID_PAYLOAD, http: 400, area: validation}
+  - {code: INVALID_REQUEST, http: 400, area: validation}
+  - {code: API_REQUEST_FAILED, http: 502, area: upstream}
+  - {code: FILE_UPLOAD_FAILED, http: 500, area: upload}
+  - {code: MAX_RETRIES_EXCEEDED, http: 500, area: upstream}
+  - {code: EXTERNAL_SERVICE_ERROR, http: 502, area: upstream}
+  - {code: INTERNAL_SERVER_ERROR, http: 500, area: server}
+  - {code: SERVICE_UNAVAILABLE, http: 503, area: server}
+  - {code: GATEWAY_TIMEOUT, http: 504, area: server}

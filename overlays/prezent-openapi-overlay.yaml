@@ -1,0 +1,24 @@
+overlay: 1.0.0
+info:
+  title: API Evangelist enhancements for Prezent Platform API
+  version: 1.0.0
+extends: openapi/prezent-openapi-original.yml
+actions:
+  - target: $.info
+    update:
+      x-apievangelist-rating: agent-ready
+      x-apievangelist-notes: >
+        Uniform success/error envelope, stable ErrorCode catalog, Idempotency-Key support (24h),
+        cursor pagination, X-RateLimit-* signalling, first-class webhooks, and an official MCP server.
+  - target: $.info
+    update:
+      x-artifacts:
+        mcp: mcp/prezent-mcp.yml
+        packages: packages/prezent-packages.yml
+        conventions: conventions/prezent-conventions.yml
+        errors: errors/prezent-error-codes.yml
+        webhooks: asyncapi/prezent-webhooks.yml
+        authentication: authentication/prezent-authentication.yml
+        conformance: conformance/prezent-conformance.yml
+        lifecycle: lifecycle/prezent-lifecycle.yml
+        agentic_access: agentic-access/prezent-agentic-access.yml

@@ -1,0 +1,1736 @@
+{
+  "info": {
+    "_postman_id": "636eddd4-9ba5-48c5-84c9-794b21a7b215",
+    "name": "Prezent Platform Audiences Themes API",
+    "description": "The Prezent Platform API exposes Prezent's AutoGenerator, Template Converter,\nAudiences, Themes, and File-upload services as a uniform JSON HTTP API.\n\nThis contract describes the **target agent-ready shape** of the API: every\ndocumented endpoint returns a uniform success envelope `{ \"success\": true,\n\"data\": { ... } }` or a uniform error envelope `{ \"success\": false,\n\"data\": null, \"error\": { \"code\": \"...\", \"message\": \"...\", \"details\": { ... } } }`.\nError codes are drawn from a stable catalog (see `ErrorCode`). The contract\nis additive: handlers may continue to emit legacy keys alongside the\ndocumented ones for backwards compatibility, so schemas explicitly allow\nadditional properties at the envelope and data levels.\n\nSeveral endpoints kick off long-running background work and return a\n`callback_id` that the client polls against a corresponding status\nendpoint. The canonical async polling endpoint for the Template Converter\nfamily is **`GET /api/v2/template-converter/status/{callback_id}`** which\nuses strict HTTP-status mapping (200 only on workflow success, 4xx/5xx on\nworkflow failure). The v1 polling endpoint at\n`/api/v1/template-converter/status/{callbackId}` (and its REST alias\n`GET /api/v1/template-conversions/{callback_id}`) continues to be served\nwith legacy semantics (HTTP 200 with `status` field) and is intentionally\nomitted from this documentation.\n\n**REST resource aliases (v1.1).** AutoGenerator and Template Converter\nendpoints are documented here under their REST-resource path names\n(`/api/v1/autogenerations`, `/api/v1/template-conversions`). The legacy\nRPC-style paths under `/api/v1/autogenerator/*` and\n`/api/v1/template-converter/*` continue to be served indefinitely; they\nreturn a `Deprecation: true` header pointing to the successor alias.\n\n**Conventions that apply to every endpoint** (full reference in the\ncompanion guides on this documentation site):\n\n- **Auth:** API key as a Bearer token \u2014 `Authorization: Bearer <key>`.\n  Each key is scoped to an allow-list of endpoint paths; an out-of-scope\n  call returns `404 ENDPOINT_NOT_FOUND`.\n- **Rate limits:** gateway throttle 10 req/s sustained, 5 burst,\n  1,000 req/day per key; per-company per-category 60-second sliding\n  windows; annual quotas (50,000 slide generations/yr, 1,000,000\n  downloads/yr). Limit breaches return `429` with `error.code`\n  `TOO_MANY_REQUESTS` (gateway), `RATE_LIMIT_EXCEEDED` (per-category),\n  or `USAGE_LIMIT_EXCEEDED` (annual).\n- **Errors:** every error uses the `{ success:false, data:null, error:{\n  code, message, details } }` envelope with stable, documented `code`\n  values.\n- **Idempotency & pagination:** mutating requests accept an\n  `Idempotency-Key`; list endpoints accept opt-in `limit`/`cursor`\n  paging.\n\n**Building with an AI agent?** Prezent ships a first-class Model Context\nProtocol (MCP) server. The hosted endpoint is\n`https://mcp.myprezent.com/mcp` (OAuth 2.1, works with Claude.ai Custom\nConnectors); a local stdio server is published on PyPI as\n`prezent-mcp-server` and plugs into Claude Desktop, Cursor, Cline,\nContinue, and Zed. The MCP tools wrap the same REST endpoints\ndescribed here.\n\n**Official SDKs.** Typed REST clients are published for Python and\nTypeScript (`prezent-sdk`) \u2014 generated from and versioned against this\nspec. For other languages, generate a client from this document.\n\n**Out of scope of this document:** SCIM endpoints under `/api/v1/scim/*`.\nThose endpoints conform to RFC 7644 (SCIM 2.0) and follow a different\nenvelope (`schemas`, `Resources`, `totalResults`, etc.). They are\ndocumented separately at /docs/scim-user-management.\n\n\nContact Support:\n Name: Prezent API Support\n Email: support@prezent.ai",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "createdAt": "2026-07-28T02:40:35.000Z",
+    "updatedAt": "2026-07-28T02:40:36.000Z",
+    "lastUpdatedBy": "35240",
+    "uid": "35240-636eddd4-9ba5-48c5-84c9-794b21a7b215"
+  },
+  "item": [
+    {
+      "name": "api",
+      "item": [
+        {
+          "name": "v1",
+          "item": [
+            {
+              "name": "templates",
+              "item": [
+                {
+                  "name": "List templates available to a feature",
+                  "id": "0f1ff8d7-027b-4dc4-8cdc-662cef1af153",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/v1/templates?feature=auto_generator&name=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>&enabledFeature=<string>",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "templates"
+                      ],
+                      "query": [
+                        {
+                          "description": "Filter to templates enabled for a specific feature.",
+                          "key": "feature",
+                          "value": "auto_generator"
+                        },
+                        {
+                          "description": "Optional case-insensitive name filter.",
+                          "key": "name",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Sort expression (for example `name:asc`).",
+                          "key": "sort",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Items per page (1\u2013200, default 50). Enables pagination.",
+                          "key": "limit",
+                          "value": "50"
+                        },
+                        {
+                          "description": "Opaque cursor from a previous response's `next_cursor`.",
+                          "key": "cursor",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Source filter (e.g. brand vs prezent).",
+                          "key": "source",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Optional feature flag filter.",
+                          "key": "enabledFeature",
+                          "value": "<string>"
+                        }
+                      ]
+                    },
+                    "description": "Returns the themes/templates available to the caller's company,\noptionally filtered to a specific feature. This single endpoint\nreplaces the legacy `GET /api/v1/autogenerator/templates` and\n`GET /api/v1/template-converter/templates` aliases \u2014 pass the\n`feature` query parameter to scope results.\n\n**Pagination is opt-in.** Send `limit` (and follow `next_cursor`)\nto page; omit both `limit` and `cursor` to receive the full list\nunchanged.\n"
+                  },
+                  "response": [
+                    {
+                      "id": "79c3ad8d-9dcb-4711-a449-591f85e9dbca",
+                      "name": "Templates returned.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/templates?feature=auto_generator&name=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>&enabledFeature=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "templates"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter to templates enabled for a specific feature.",
+                              "key": "feature",
+                              "value": "auto_generator"
+                            },
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Items per page (1\u2013200, default 50). Enables pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter (e.g. brand vs prezent).",
+                              "key": "source",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"data\": [\n    {\n      \"id\": \"<string>\",\n      \"name\": \"<string>\",\n      \"code\": \"<string>\",\n      \"source\": \"<string>\"\n    },\n    {\n      \"id\": \"<string>\",\n      \"name\": \"<string>\",\n      \"code\": \"<string>\",\n      \"source\": \"<string>\",\n      \"tempor_ff3\": \"magna qui aliqua\",\n      \"fugiat_b\": 40725867,\n      \"nostrud_fb\": -90770496\n    }\n  ],\n  \"success\": \"<boolean>\",\n  \"next_cursor\": \"<string,null>\"\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-79c3ad8d-9dcb-4711-a449-591f85e9dbca"
+                    },
+                    {
+                      "id": "52c9cef2-b2f8-41d1-8b26-ac57850b9b5d",
+                      "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DET",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/templates?feature=auto_generator&name=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>&enabledFeature=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "templates"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter to templates enabled for a specific feature.",
+                              "key": "feature",
+                              "value": "auto_generator"
+                            },
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Items per page (1\u2013200, default 50). Enables pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter (e.g. brand vs prezent).",
+                              "key": "source",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Bad Request",
+                      "code": 400,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-52c9cef2-b2f8-41d1-8b26-ac57850b9b5d"
+                    },
+                    {
+                      "id": "1bc265e8-7105-4dce-856c-9dec788f857b",
+                      "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/templates?feature=auto_generator&name=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>&enabledFeature=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "templates"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter to templates enabled for a specific feature.",
+                              "key": "feature",
+                              "value": "auto_generator"
+                            },
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Items per page (1\u2013200, default 50). Enables pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter (e.g. brand vs prezent).",
+                              "key": "source",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Unauthorized",
+                      "code": 401,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-1bc265e8-7105-4dce-856c-9dec788f857b"
+                    },
+                    {
+                      "id": "884b3bde-0598-439b-9248-ac5f09ee9c17",
+                      "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/templates?feature=auto_generator&name=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>&enabledFeature=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "templates"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter to templates enabled for a specific feature.",
+                              "key": "feature",
+                              "value": "auto_generator"
+                            },
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Items per page (1\u2013200, default 50). Enables pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter (e.g. brand vs prezent).",
+                              "key": "source",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Forbidden",
+                      "code": 403,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-884b3bde-0598-439b-9248-ac5f09ee9c17"
+                    },
+                    {
+                      "id": "71c83aa0-3ee3-4913-95ab-fb533c91ad3a",
+                      "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/templates?feature=auto_generator&name=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>&enabledFeature=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "templates"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter to templates enabled for a specific feature.",
+                              "key": "feature",
+                              "value": "auto_generator"
+                            },
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Items per page (1\u2013200, default 50). Enables pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter (e.g. brand vs prezent).",
+                              "key": "source",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-71c83aa0-3ee3-4913-95ab-fb533c91ad3a"
+                    },
+                    {
+                      "id": "ab2ef4d1-5bbc-4fdf-b029-024fb8d79e24",
+                      "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gate",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/templates?feature=auto_generator&name=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>&enabledFeature=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "templates"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter to templates enabled for a specific feature.",
+                              "key": "feature",
+                              "value": "auto_generator"
+                            },
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Items per page (1\u2013200, default 50). Enables pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter (e.g. brand vs prezent).",
+                              "key": "source",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Too Many Requests",
+                      "code": 429,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Limit",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Remaining",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Reset",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "Retry-After",
+                          "value": ""
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-ab2ef4d1-5bbc-4fdf-b029-024fb8d79e24"
+                    },
+                    {
+                      "id": "3f16f8c6-d82e-47c7-bef5-4a6c6ec1f492",
+                      "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/templates?feature=auto_generator&name=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>&enabledFeature=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "templates"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter to templates enabled for a specific feature.",
+                              "key": "feature",
+                              "value": "auto_generator"
+                            },
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Items per page (1\u2013200, default 50). Enables pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter (e.g. brand vs prezent).",
+                              "key": "source",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Internal Server Error",
+                      "code": 500,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-3f16f8c6-d82e-47c7-bef5-4a6c6ec1f492"
+                    },
+                    {
+                      "id": "d1865eac-8266-4eae-b16d-6134d3f6b83e",
+                      "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/templates?feature=auto_generator&name=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>&enabledFeature=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "templates"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter to templates enabled for a specific feature.",
+                              "key": "feature",
+                              "value": "auto_generator"
+                            },
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Items per page (1\u2013200, default 50). Enables pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter (e.g. brand vs prezent).",
+                              "key": "source",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Service Unavailable",
+                      "code": 503,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-d1865eac-8266-4eae-b16d-6134d3f6b83e"
+                    },
+                    {
+                      "id": "e70d6be9-8939-48cf-ba72-d8a11166d5ae",
+                      "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/templates?feature=auto_generator&name=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>&enabledFeature=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "templates"
+                          ],
+                          "query": [
+                            {
+                              "description": "Filter to templates enabled for a specific feature.",
+                              "key": "feature",
+                              "value": "auto_generator"
+                            },
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Items per page (1\u2013200, default 50). Enables pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter (e.g. brand vs prezent).",
+                              "key": "source",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Gateway Timeout",
+                      "code": 504,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-e70d6be9-8939-48cf-ba72-d8a11166d5ae"
+                    }
+                  ],
+                  "createdAt": "2026-07-28T02:40:36.000Z",
+                  "updatedAt": "2026-07-28T02:40:36.000Z",
+                  "uid": "35240-0f1ff8d7-027b-4dc4-8cdc-662cef1af153"
+                }
+              ],
+              "id": "766a2977-47dd-4968-81cf-6fe1b8feb99b",
+              "createdAt": "2026-07-28T02:40:36.000Z",
+              "updatedAt": "2026-07-28T02:40:36.000Z",
+              "uid": "35240-766a2977-47dd-4968-81cf-6fe1b8feb99b"
+            },
+            {
+              "name": "themes",
+              "item": [
+                {
+                  "name": "List themes (brand templates)",
+                  "id": "ee41ad56-063a-4de9-bb7e-f3cabc1b494d",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "method": "GET",
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "application/json"
+                      }
+                    ],
+                    "url": {
+                      "raw": "{{baseUrl}}/api/v1/themes?name=<string>&feature=<string>&enabledFeature=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>",
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "themes"
+                      ],
+                      "query": [
+                        {
+                          "description": "Optional case-insensitive name filter.",
+                          "key": "name",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Filter by feature scope.",
+                          "key": "feature",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Optional feature flag filter.",
+                          "key": "enabledFeature",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Sort expression (for example `name:asc`).",
+                          "key": "sort",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                          "key": "limit",
+                          "value": "50"
+                        },
+                        {
+                          "description": "Opaque cursor from a previous response's `next_cursor`.",
+                          "key": "cursor",
+                          "value": "<string>"
+                        },
+                        {
+                          "description": "Source filter.",
+                          "key": "source",
+                          "value": "<string>"
+                        }
+                      ]
+                    },
+                    "description": "Returns the presentation themes available to the caller's company.\n\n**Pagination is opt-in.** Send `limit` (and follow `next_cursor`)\nto page; omit both `limit` and `cursor` to receive the full list\nunchanged.\n"
+                  },
+                  "response": [
+                    {
+                      "id": "675b645c-f114-46c2-a334-2a26cb53116c",
+                      "name": "Themes returned.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/themes?name=<string>&feature=<string>&enabledFeature=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "themes"
+                          ],
+                          "query": [
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter.",
+                              "key": "source",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"data\": [\n    {\n      \"id\": \"<string>\",\n      \"name\": \"<string>\",\n      \"code\": \"<string>\",\n      \"source\": \"<string>\"\n    },\n    {\n      \"id\": \"<string>\",\n      \"name\": \"<string>\",\n      \"code\": \"<string>\",\n      \"source\": \"<string>\",\n      \"tempor_ff3\": \"magna qui aliqua\",\n      \"fugiat_b\": 40725867,\n      \"nostrud_fb\": -90770496\n    }\n  ],\n  \"success\": \"<boolean>\",\n  \"next_cursor\": \"<string,null>\"\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-675b645c-f114-46c2-a334-2a26cb53116c"
+                    },
+                    {
+                      "id": "5dfbdb93-3163-49d5-a53c-c2a38fb7c23e",
+                      "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DET",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/themes?name=<string>&feature=<string>&enabledFeature=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "themes"
+                          ],
+                          "query": [
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter.",
+                              "key": "source",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Bad Request",
+                      "code": 400,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-5dfbdb93-3163-49d5-a53c-c2a38fb7c23e"
+                    },
+                    {
+                      "id": "a86e96ba-ce6f-418d-93c1-723e3113582a",
+                      "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/themes?name=<string>&feature=<string>&enabledFeature=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "themes"
+                          ],
+                          "query": [
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter.",
+                              "key": "source",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Unauthorized",
+                      "code": 401,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-a86e96ba-ce6f-418d-93c1-723e3113582a"
+                    },
+                    {
+                      "id": "999d98fa-ce48-4aa7-abcb-9bad45641f7d",
+                      "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/themes?name=<string>&feature=<string>&enabledFeature=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "themes"
+                          ],
+                          "query": [
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter.",
+                              "key": "source",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Forbidden",
+                      "code": 403,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-999d98fa-ce48-4aa7-abcb-9bad45641f7d"
+                    },
+                    {
+                      "id": "a1cd8bb7-178a-42eb-9f99-a07cc594360a",
+                      "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/themes?name=<string>&feature=<string>&enabledFeature=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "themes"
+                          ],
+                          "query": [
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter.",
+                              "key": "source",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Not Found",
+                      "code": 404,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-a1cd8bb7-178a-42eb-9f99-a07cc594360a"
+                    },
+                    {
+                      "id": "4b928359-7174-4854-b90c-89a398393a68",
+                      "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gate",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/themes?name=<string>&feature=<string>&enabledFeature=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "themes"
+                          ],
+                          "query": [
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter.",
+                              "key": "source",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Too Many Requests",
+                      "code": 429,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Limit",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Remaining",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "X-RateLimit-Reset",
+                          "value": ""
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "Retry-After",
+                          "value": ""
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-4b928359-7174-4854-b90c-89a398393a68"
+                    },
+                    {
+                      "id": "77d0130f-df29-4a3a-9c32-e5d582d3f85d",
+                      "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/themes?name=<string>&feature=<string>&enabledFeature=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "themes"
+                          ],
+                          "query": [
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter.",
+                              "key": "source",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Internal Server Error",
+                      "code": 500,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-77d0130f-df29-4a3a-9c32-e5d582d3f85d"
+                    },
+                    {
+                      "id": "7379a18a-fadc-4b1e-8c5f-c39167875e8e",
+                      "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/themes?name=<string>&feature=<string>&enabledFeature=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "themes"
+                          ],
+                          "query": [
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter.",
+                              "key": "source",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Service Unavailable",
+                      "code": 503,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-7379a18a-fadc-4b1e-8c5f-c39167875e8e"
+                    },
+                    {
+                      "id": "93e058e3-0037-4a84-a89a-0b7f601305f6",
+                      "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+                      "originalRequest": {
+                        "method": "GET",
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "application/json"
+                          },
+                          {
+                            "description": "Added as a part of security scheme: bearer",
+                            "key": "Authorization",
+                            "value": "Bearer <token>"
+                          }
+                        ],
+                        "url": {
+                          "raw": "{{baseUrl}}/api/v1/themes?name=<string>&feature=<string>&enabledFeature=<string>&sort=<string>&limit=50&cursor=<string>&source=<string>",
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "api",
+                            "v1",
+                            "themes"
+                          ],
+                          "query": [
+                            {
+                              "description": "Optional case-insensitive name filter.",
+                              "key": "name",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Filter by feature scope.",
+                              "key": "feature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Optional feature flag filter.",
+                              "key": "enabledFeature",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Sort expression (for example `name:asc`).",
+                              "key": "sort",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Max items per page (1\u2013200, default 50). Sending this enables cursor pagination.",
+                              "key": "limit",
+                              "value": "50"
+                            },
+                            {
+                              "description": "Opaque cursor from a previous response's `next_cursor`.",
+                              "key": "cursor",
+                              "value": "<string>"
+                            },
+                            {
+                              "description": "Source filter.",
+                              "key": "source",
+                              "value": "<string>"
+                            }
+                          ]
+                        }
+                      },
+                      "status": "Gateway Timeout",
+                      "code": 504,
+                      "_postman_previewlanguage": "json",
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "application/json"
+                        }
+                      ],
+                      "cookie": [],
+                      "responseTime": null,
+                      "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": null,\n  \"error\": {\n    \"code\": \"UNSUPPORTED_FILE_TYPE\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"commodo_b\": true\n    }\n  }\n}",
+                      "createdAt": "2026-07-28T02:40:36.000Z",
+                      "updatedAt": "2026-07-28T02:40:36.000Z",
+                      "uid": "35240-93e058e3-0037-4a84-a89a-0b7f601305f6"
+                    }
+                  ],
+                  "createdAt": "2026-07-28T02:40:36.000Z",
+                  "updatedAt": "2026-07-28T02:40:36.000Z",
+                  "uid": "35240-ee41ad56-063a-4de9-bb7e-f3cabc1b494d"
+                }
+              ],
+              "id": "5d2d6b67-6188-4480-b7a3-424f19e2c709",
+              "createdAt": "2026-07-28T02:40:36.000Z",
+              "updatedAt": "2026-07-28T02:40:36.000Z",
+              "uid": "35240-5d2d6b67-6188-4480-b7a3-424f19e2c709"
+            }
+          ],
+          "id": "88352707-afb9-4bf7-8613-0deccc2a01b3",
+          "createdAt": "2026-07-28T02:40:36.000Z",
+          "updatedAt": "2026-07-28T02:40:36.000Z",
+          "uid": "35240-88352707-afb9-4bf7-8613-0deccc2a01b3"
+        }
+      ],
+      "id": "b19f30ca-0c5a-449a-bc85-d488fa4cc803",
+      "createdAt": "2026-07-28T02:40:36.000Z",
+      "updatedAt": "2026-07-28T02:40:36.000Z",
+      "uid": "35240-b19f30ca-0c5a-449a-bc85-d488fa4cc803"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.prezent.ai"
+    }
+  ]
+}

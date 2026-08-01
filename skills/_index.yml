@@ -1,0 +1,12 @@
+generated: '2026-07-20'
+method: generated
+source: openapi/prezent-openapi-original.yml
+skills:
+  - file: prezent-generate-presentation.md
+    name: Generate a Prezent presentation
+    api: openapi/prezent-openapi-original.yml
+    operations: [createAutogeneration, getAutogeneration, createAutogenerationDownload]
+  - file: prezent-convert-template.md
+    name: Convert a deck to a brand template
+    api: openapi/prezent-openapi-original.yml
+    operations: [createTemplateConversion, getTemplateConverterStatusV2, getTemplateConversionDownload]

@@ -1,0 +1,63 @@
+generated: '2026-07-20'
+method: derived
+source: openapi/prezent-openapi-original.yml (paths, tags, callback_id references)
+notes: >
+  Derived from the REST resource surface. Async resources (Autogeneration, TemplateConversion)
+  are keyed by a `callback_id` returned at creation; sub-resources hang off that id.
+entities:
+  - name: Autogeneration
+    key: callback_id
+    tag: AutoGenerator
+    description: An AI presentation build job started from a prompt/data.
+  - name: TemplateConversion
+    key: callback_id
+    tag: Template Converter
+    description: A job that converts a deck to a brand-compliant template.
+  - name: Template
+    tag: Template Converter
+    description: A brand template a conversion targets.
+  - name: Audience
+    tag: Audiences
+    description: An audience profile that shapes generation.
+  - name: Theme
+    tag: Themes
+    description: A visual theme applied to generated content.
+  - name: Upload
+    tag: Upload
+    description: An uploaded source file (pre-processed / validated before use).
+  - name: WebhookSubscription
+    tag: Webhooks
+    key: id
+    description: A registered webhook endpoint receiving completion events.
+  - name: StreamSession
+    tag: Streaming
+    description: A streaming session for incremental generation output.
+relationships:
+  - from: Autogeneration
+    to: Audience
+    type: belongs_to
+    via: audience_id
+  - from: Autogeneration
+    to: Theme
+    type: belongs_to
+    via: theme_id
+  - from: Autogeneration
+    to: Upload
+    type: has_many
+    via: file inputs
+  - from: Autogeneration
+    to: WebhookSubscription
+    type: notifies
+    via: autogeneration.completed / autogeneration.failed
+  - from: TemplateConversion
+    to: Template
+    type: belongs_to
+    via: template_id
+  - from: TemplateConversion
+    to: Upload
+    type: has_many
+    via: source deck
+  - from: TemplateConversion
+    to: WebhookSubscription
+    type: notifies
+    via: template_conversion.completed / template_conversion.failed

@@ -1,0 +1,32 @@
+# Prezent Platform API
+
+> The Prezent Platform API exposes Prezent's AutoGenerator, Template Converter, Audiences, Themes, and File-upload services behind a single uniform JSON HTTP API. Every documented endpoint uses the same `{ "success": true, "data": {...} }` / `{ "success": false, "data": null, "error": {...} }` envelopes, a stable error-code catalog, Bearer-token authentication, and a consistent async polling pattern. It is designed to be agent-friendly, and ships a hosted Model Context Protocol (MCP) server, webhooks, and Server-Sent Events streaming.
+
+## Docs
+
+- [Overview](/docs/)
+- [Introduction](/docs/intro)
+- [Getting Started](/docs/getting-started)
+- [Authentication & Security](/docs/authentication)
+- [Agent Quickstart](/docs/agent-quickstart)
+- [Developer Guide](/docs/developer-guide)
+- [Error Reference](/docs/errors)
+- [Rate Limits](/docs/rate-limits)
+- [SDKs & Client Libraries](/docs/sdks)
+- [Agents & MCP](/docs/agents-and-mcp)
+- [Webhooks](/docs/webhooks)
+- [Streaming (SSE)](/docs/streaming)
+- [AutoGenerator API](/docs/auto-generate)
+- [Template Converter API](/docs/template-converter-api)
+- [Audiences API](/docs/audiences)
+- [Themes API](/docs/themes)
+- [File Upload API](/docs/file-upload)
+- [File Access API](/docs/file-access)
+- [Health API](/docs/health)
+- [SCIM — User Management](/docs/scim-user-management)
+- [Change Log](/docs/change-log)
+
+## API
+
+- [OpenAPI 3.1 specification (YAML)](/openapi/openapi.yaml)
+- [Interactive API Reference](/api-reference/)

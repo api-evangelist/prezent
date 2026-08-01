@@ -1,0 +1,4289 @@
+openapi: 3.1.0
+
+info:
+  title: Prezent Platform API
+  version: 1.0.0
+  summary: Agent-ready REST API for Prezent's content-generation and template-conversion services.
+  description: |
+    The Prezent Platform API exposes Prezent's AutoGenerator, Template Converter,
+    Audiences, Themes, and File-upload services as a uniform JSON HTTP API.
+
+    This contract describes the **target agent-ready shape** of the API: every
+    documented endpoint returns a uniform success envelope `{ "success": true,
+    "data": { ... } }` or a uniform error envelope `{ "success": false,
+    "data": null, "error": { "code": "...", "message": "...", "details": { ... } } }`.
+    Error codes are drawn from a stable catalog (see `ErrorCode`). The contract
+    is additive: handlers may continue to emit legacy keys alongside the
+    documented ones for backwards compatibility, so schemas explicitly allow
+    additional properties at the envelope and data levels.
+
+    Several endpoints kick off long-running background work and return a
+    `callback_id` that the client polls against a corresponding status
+    endpoint. The canonical async polling endpoint for the Template Converter
+    family is **`GET /api/v2/template-converter/status/{callback_id}`** which
+    uses strict HTTP-status mapping (200 only on workflow success, 4xx/5xx on
+    workflow failure). The v1 polling endpoint at
+    `/api/v1/template-converter/status/{callbackId}` (and its REST alias
+    `GET /api/v1/template-conversions/{callback_id}`) continues to be served
+    with legacy semantics (HTTP 200 with `status` field) and is intentionally
+    omitted from this documentation.
+
+    **REST resource aliases (v1.1).** AutoGenerator and Template Converter
+    endpoints are documented here under their REST-resource path names
+    (`/api/v1/autogenerations`, `/api/v1/template-conversions`). The legacy
+    RPC-style paths under `/api/v1/autogenerator/*` and
+    `/api/v1/template-converter/*` continue to be served indefinitely; they
+    return a `Deprecation: true` header pointing to the successor alias.
+
+    **Conventions that apply to every endpoint** (full reference in the
+    companion guides on this documentation site):
+
+    - **Auth:** API key as a Bearer token — `Authorization: Bearer <key>`.
+      Each key is scoped to an allow-list of endpoint paths; an out-of-scope
+      call returns `404 ENDPOINT_NOT_FOUND`.
+    - **Rate limits:** gateway throttle 10 req/s sustained, 5 burst,
+      1,000 req/day per key; per-company per-category 60-second sliding
+      windows; annual quotas (50,000 slide generations/yr, 1,000,000
+      downloads/yr). Limit breaches return `429` with `error.code`
+      `TOO_MANY_REQUESTS` (gateway), `RATE_LIMIT_EXCEEDED` (per-category),
+      or `USAGE_LIMIT_EXCEEDED` (annual).
+    - **Errors:** every error uses the `{ success:false, data:null, error:{
+      code, message, details } }` envelope with stable, documented `code`
+      values.
+    - **Idempotency & pagination:** mutating requests accept an
+      `Idempotency-Key`; list endpoints accept opt-in `limit`/`cursor`
+      paging.
+
+    **Building with an AI agent?** Prezent ships a first-class Model Context
+    Protocol (MCP) server. The hosted endpoint is
+    `https://mcp.myprezent.com/mcp` (OAuth 2.1, works with Claude.ai Custom
+    Connectors); a local stdio server is published on PyPI as
+    `prezent-mcp-server` and plugs into Claude Desktop, Cursor, Cline,
+    Continue, and Zed. The MCP tools wrap the same REST endpoints
+    described here.
+
+    **Official SDKs.** Typed REST clients are published for Python and
+    TypeScript (`prezent-sdk`) — generated from and versioned against this
+    spec. For other languages, generate a client from this document.
+
+    **Out of scope of this document:** SCIM endpoints under `/api/v1/scim/*`.
+    Those endpoints conform to RFC 7644 (SCIM 2.0) and follow a different
+    envelope (`schemas`, `Resources`, `totalResults`, etc.). They are
+    documented separately at /docs/scim-user-management.
+  x-out-of-scope-note: |
+    SCIM endpoints (`/api/v1/scim/*`) are NOT included in this spec. They
+    follow RFC 7644 (SCIM 2.0) and are documented in a separate document at
+    /docs/scim-user-management.
+  contact:
+    name: Prezent API Support
+    email: support@prezent.ai
+    url: https://prezent.ai
+  license:
+    name: Proprietary - Prezent, Inc.
+    url: https://prezent.ai/terms
+
+servers:
+  - url: https://api.prezent.ai
+    description: Production (canonical)
+  - url: https://uatstage-api.myprezent.com
+    description: UAT (user acceptance testing)
+  - url: https://devstage-api.myprezent.com
+    description: Development
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: AutoGenerator
+    description: Long-running and synchronous endpoints that generate and
+      manipulate AI-authored presentations from prompts, files, and assets.
+  - name: Template Converter
+    description: Apply a target brand template to an uploaded presentation,
+      including review suggestions, work-area adjustment, layout change,
+      and download.
+  - name: Audiences
+    description: List and search the audience profiles configured for the
+      caller's company.
+  - name: Themes
+    description: List the presentation themes (brand templates) configured
+      for the caller's company.
+  - name: Upload
+    description: Validate, preprocess, and upload supporting files
+      (PowerPoint, PDF, images, etc.).
+  - name: File Access
+    description: Mint short-lived access tokens for the caller's stored
+      files.
+  - name: Webhooks
+    description: Receive signed HTTPS callbacks when Prezent jobs complete
+      or fail. Subscriptions are scoped per API key, retried over a 21h
+      window, and auto-disabled after 50 consecutive failures. See the
+      [Webhooks guide](/docs/webhooks) for the signature format and
+      verification examples.
+  - name: Streaming
+    description: Open a Server-Sent Events stream to receive real-time
+      progress events as Prezent generates a presentation. See the
+      [Streaming guide](/docs/streaming) for a full walk-through plus
+      reconnect semantics.
+  - name: Health
+    description: Liveness and component health-check endpoints.
+
+paths:
+
+  # -------------------------------------------------------------------------
+  # Health
+  # -------------------------------------------------------------------------
+  /test:
+    get:
+      tags: [Health]
+      summary: Liveness check
+      description: |
+        Returns a fixed greeting payload. Exists to allow clients to verify
+        connectivity and credentials. Does not consult any downstream
+        services.
+      operationId: getTest
+      x-rate-limit-category: general
+      responses:
+        '200':
+          description: API is reachable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /health:
+    get:
+      tags: [Health]
+      summary: Component health check
+      description: |
+        Reports the status of downstream services. With no `category`
+        parameter, returns a simple "alive" greeting. With
+        `category=autogenerator` or `category=scim`, reports
+        per-component status and returns 503 if any required service is
+        unhealthy.
+      operationId: getHealth
+      x-rate-limit-category: general
+      parameters:
+        - in: query
+          name: category
+          description: Component group to check. Omit for a generic
+            liveness response.
+          required: false
+          schema:
+            type: string
+            enum: [autogenerator, scim]
+      responses:
+        '200':
+          description: All checked components healthy.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  # -------------------------------------------------------------------------
+  # AutoGenerator family
+  # -------------------------------------------------------------------------
+  /api/v1/autogenerations:
+    post:
+      tags: [AutoGenerator]
+      summary: Create an AutoGenerator job
+      description: |
+        Kicks off a background pipeline that turns the supplied prompt,
+        context files, and assets into a Prezent presentation. Returns a
+        `callback_id` that the caller polls via
+        `GET /api/v1/autogenerations/{callback_id}` until `status` is
+        `success` or `failed`.
+      operationId: createAutogeneration
+      x-rate-limit-category: autogenerator
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorStartRequest'
+      responses:
+        '200':
+          description: Job accepted; client must poll for completion.
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorStartResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerations/{callback_id}:
+    get:
+      tags: [AutoGenerator]
+      summary: Read an AutoGenerator job
+      description: |
+        Returns the current state of a previously started AutoGenerator job.
+        The `status` field in the response data is one of
+        `in_progress`, `success`, or `failed`. Once `success`, the payload
+        also contains the generated slides, extracted images, theme/audience
+        metadata, and other context required to display or further edit
+        the deck.
+
+        For the same `callback_id`, polling after `status=success` returns
+        the same cached payload.
+      operationId: getAutogeneration
+      x-rate-limit-category: autogenerator
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+        - in: query
+          name: deck_callback_id
+          required: false
+          description: Original deck callback id when polling a regenerate
+            sub-job.
+          schema: { type: string }
+        - in: query
+          name: operation
+          required: false
+          description: Sub-operation hint (used by regenerate flows).
+          schema: { type: string }
+        - in: query
+          name: status_auto_polling
+          required: false
+          description: Pass `true` to indicate the caller is auto-polling;
+            affects how stalled jobs are surfaced.
+          schema: { type: string, enum: ['true', 'false'] }
+      responses:
+        '200':
+          description: Current job status returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorStatusResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerations/lookups:
+    post:
+      tags: [AutoGenerator]
+      summary: Look up multiple AutoGenerator jobs in one call
+      description: |
+        Returns layout metadata for each `callback_id` in the request. Use
+        when rendering a list view that needs many decks at once.
+      operationId: createAutogenerationLookup
+      x-rate-limit-category: autogenerator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorStatusBulkRequest'
+      responses:
+        '200':
+          description: Bulk status returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorStatusBulkResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerator/meta:
+    post:
+      tags: [AutoGenerator]
+      summary: Fetch slide-metadata for asset IDs
+      description: |
+        Returns slide-level metadata (titles, layout codes, thumbnails) for
+        each asset id provided. Used by editors that need to enrich a slide
+        list without re-running generation.
+      operationId: getAutoGeneratorMeta
+      x-rate-limit-category: autogenerator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorMetaRequest'
+      responses:
+        '200':
+          description: Metadata returned for each asset id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorMetaResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerations/{callback_id}/downloads:
+    post:
+      tags: [AutoGenerator]
+      summary: Create a download artefact for an AutoGenerator deck
+      description: |
+        Synchronously merges all slides for the given `callback_id` into a
+        single PowerPoint (or PDF, depending on `outputFormat`) and returns
+        a signed download URL. The merge step can take up to 60 seconds.
+        Subject to the `AUTO_GEN_DOWNLOAD` usage limit in addition to the
+        normal rate limits.
+      operationId: createAutogenerationDownload
+      x-rate-limit-category: autogenerator
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorDownloadRequest'
+      responses:
+        '200':
+          description: Merged deck produced; signed URL returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorDownloadResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerations/{callback_id}/regenerations:
+    post:
+      tags: [AutoGenerator]
+      summary: Create a regeneration of an AutoGenerator deck
+      description: |
+        Re-runs a portion of an existing AutoGenerator deck — typically a
+        slide, node, or section — and returns a new `callback_id` to poll.
+        Counted as a fresh generation against the `AUTO_GEN` usage cap.
+      operationId: createAutogenerationRegeneration
+      x-rate-limit-category: autogenerator
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+        - in: query
+          name: operation
+          required: true
+          description: The regenerate sub-operation (for example
+            `node_change`, `slide_regenerate`).
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorRegenerateRequest'
+      responses:
+        '200':
+          description: Regenerate job accepted; poll the returned
+            `new_callback_id`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorRegenerateResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerations/{callback_id}/node-changes:
+    post:
+      tags: [AutoGenerator]
+      summary: Create a node-level change on an AutoGenerator slide
+      description: |
+        Mutates a single node (text, image, shape) within a slide of an
+        existing deck. Returns the updated slide payload synchronously.
+      operationId: createAutogenerationNodeChange
+      x-rate-limit-category: autogenerator
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorNodeChangeRequest'
+      responses:
+        '200':
+          description: Node change applied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorGenericDataResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerator/slide-data:
+    post:
+      tags: [AutoGenerator]
+      summary: Fetch slide data for a single slide callback
+      description: |
+        Returns the raw slide-data document (text, images, layout,
+        speaker notes) for the given `slide_callback_id`.
+      operationId: getAutoGeneratorSlideData
+      x-rate-limit-category: autogenerator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorSlideDataRequest'
+      responses:
+        '200':
+          description: Slide data returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorGenericDataResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerations/{callback_id}/image-extractions:
+    post:
+      tags: [AutoGenerator]
+      summary: Create an image-extraction for an AutoGenerator deck
+      description: |
+        Reads the PowerPoint at the given S3 location and returns the list
+        of embedded images. If `force_update` is true, re-runs extraction
+        even when cached results exist.
+      operationId: createAutogenerationImageExtraction
+      x-rate-limit-category: autogenerator
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorExtractImagesRequest'
+      responses:
+        '200':
+          description: Image list returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorGenericDataResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerator/brand-image-search:
+    post:
+      tags: [AutoGenerator]
+      summary: Search the caller's brand-image library
+      description: |
+        Returns brand images that match the query string, ordered by
+        relevance. Supports `skip` and `limit` for pagination.
+      operationId: searchAutoGeneratorBrandImages
+      x-rate-limit-category: autogenerator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorBrandImageSearchRequest'
+      responses:
+        '200':
+          description: Matching brand images returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorMessageDataResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerator/library-image-search:
+    post:
+      tags: [AutoGenerator]
+      summary: Search the configured stock-image library
+      description: |
+        Searches the configured stock image provider (Adobe Stock or
+        Freepik, depending on company configuration). Supports
+        `limit`/`offset` pagination. If `searchKey` is omitted, the
+        handler infers it from the supplied slide context.
+      operationId: searchAutoGeneratorLibraryImages
+      x-rate-limit-category: autogenerator
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorLibraryImageSearchRequest'
+      responses:
+        '200':
+          description: Matching library images returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorMessageDataResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerations/{callback_id}/image-replacements:
+    post:
+      tags: [AutoGenerator]
+      summary: Create an image replacement on an AutoGenerator slide
+      description: |
+        Swaps an image on a slide with a new image sourced from the
+        caller's workspace, Adobe Stock, Freepik, a previously uploaded
+        file, an extracted image, or S3.
+      operationId: createAutogenerationImageReplacement
+      x-rate-limit-category: autogenerator
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorReplaceImageRequest'
+      responses:
+        '200':
+          description: Image replacement completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorMessageDataResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerations/{callback_id}/reactions:
+    post:
+      tags: [AutoGenerator]
+      summary: Create a reaction on an AutoGenerator deck
+      description: |
+        Persists a user reaction (like) or qualitative feedback against a
+        previously generated deck/slide. When `type` is `feedback`,
+        `shareDetails` must be provided.
+      operationId: createAutogenerationReaction
+      x-rate-limit-category: autogenerator
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorReactionFeedbackRequest'
+      responses:
+        '200':
+          description: Reaction/feedback stored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorReactionFeedbackResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/autogenerations/{callback_id}/slide-actions:
+    post:
+      tags: [AutoGenerator]
+      summary: Create a per-slide action on an AutoGenerator deck
+      description: |
+        Performs one of four actions against a slide: `duplicate`,
+        `delete`, `add_sources_to_slides_note`, or `speaker_notes`. The
+        required body fields depend on `action`.
+      operationId: createAutogenerationSlideAction
+      x-rate-limit-category: autogenerator
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AutoGeneratorSlideActionsRequest'
+      responses:
+        '200':
+          description: Slide action completed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AutoGeneratorSlideActionsResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  # -------------------------------------------------------------------------
+  # Templates (unified collection, filtered by feature)
+  # -------------------------------------------------------------------------
+  /api/v1/templates:
+    get:
+      tags: [Themes]
+      summary: List templates available to a feature
+      description: |
+        Returns the themes/templates available to the caller's company,
+        optionally filtered to a specific feature. This single endpoint
+        replaces the legacy `GET /api/v1/autogenerator/templates` and
+        `GET /api/v1/template-converter/templates` aliases — pass the
+        `feature` query parameter to scope results.
+
+        **Pagination is opt-in.** Send `limit` (and follow `next_cursor`)
+        to page; omit both `limit` and `cursor` to receive the full list
+        unchanged.
+      operationId: listTemplates
+      x-rate-limit-category: general
+      parameters:
+        - in: query
+          name: feature
+          required: false
+          description: Filter to templates enabled for a specific feature.
+          schema:
+            type: string
+            enum: [auto_generator, template_converter]
+        - in: query
+          name: name
+          required: false
+          description: Optional case-insensitive name filter.
+          schema: { type: string }
+        - in: query
+          name: sort
+          required: false
+          description: Sort expression (for example `name:asc`).
+          schema: { type: string }
+        - in: query
+          name: limit
+          required: false
+          description: Items per page (1–200, default 50). Enables pagination.
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - in: query
+          name: cursor
+          required: false
+          description: Opaque cursor from a previous response's `next_cursor`.
+          schema: { type: string }
+        - in: query
+          name: source
+          required: false
+          description: Source filter (e.g. brand vs prezent).
+          schema: { type: string }
+        - in: query
+          name: enabledFeature
+          required: false
+          description: Optional feature flag filter.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Templates returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThemesListResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  # -------------------------------------------------------------------------
+  # Audiences
+  # -------------------------------------------------------------------------
+  /api/v1/audiences:
+    get:
+      tags: [Audiences]
+      summary: List audience profiles
+      description: |
+        Returns the audiences configured for the caller's company.
+
+        **Pagination is opt-in.** Send `limit` (and follow `next_cursor`)
+        to page; omit both `limit` and `cursor` to receive the full list
+        unchanged.
+      operationId: listAudiences
+      x-rate-limit-category: general
+      parameters:
+        - in: query
+          name: feature
+          required: false
+          description: Filter by feature scope.
+          schema: { type: string }
+        - in: query
+          name: id
+          required: false
+          description: Filter to a single audience by id.
+          schema: { type: string }
+        - in: query
+          name: sort
+          required: false
+          description: Sort expression (for example `name:asc`).
+          schema: { type: string }
+        - in: query
+          name: limit
+          required: false
+          description: Max items per page (1–200, default 50). Sending this
+            enables cursor pagination.
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - in: query
+          name: cursor
+          required: false
+          description: Opaque cursor from a previous response's `next_cursor`.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Audiences returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudiencesListResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/audiences/search:
+    post:
+      tags: [Audiences]
+      summary: Search audience profiles
+      description: |
+        Free-text and field-filtered search across audience profiles. Use
+        the request body's `limit` field to cap how many matches are
+        returned (most-relevant first) and the `filterBy*` fields to
+        narrow the search.
+      operationId: searchAudiences
+      x-rate-limit-category: general
+      parameters:
+        - in: query
+          name: feature
+          required: false
+          description: Filter by feature scope.
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AudiencesSearchRequest'
+      responses:
+        '200':
+          description: Matching audiences returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AudiencesListResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  # -------------------------------------------------------------------------
+  # Themes
+  # -------------------------------------------------------------------------
+  /api/v1/themes:
+    get:
+      tags: [Themes]
+      summary: List themes (brand templates)
+      description: |
+        Returns the presentation themes available to the caller's company.
+
+        **Pagination is opt-in.** Send `limit` (and follow `next_cursor`)
+        to page; omit both `limit` and `cursor` to receive the full list
+        unchanged.
+      operationId: listThemes
+      x-rate-limit-category: general
+      parameters:
+        - in: query
+          name: name
+          required: false
+          description: Optional case-insensitive name filter.
+          schema: { type: string }
+        - in: query
+          name: feature
+          required: false
+          description: Filter by feature scope.
+          schema: { type: string }
+        - in: query
+          name: enabledFeature
+          required: false
+          description: Optional feature flag filter.
+          schema: { type: string }
+        - in: query
+          name: sort
+          required: false
+          description: Sort expression (for example `name:asc`).
+          schema: { type: string }
+        - in: query
+          name: limit
+          required: false
+          description: Max items per page (1–200, default 50). Sending this
+            enables cursor pagination.
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+        - in: query
+          name: cursor
+          required: false
+          description: Opaque cursor from a previous response's `next_cursor`.
+          schema: { type: string }
+        - in: query
+          name: source
+          required: false
+          description: Source filter.
+          schema: { type: string }
+      responses:
+        '200':
+          description: Themes returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ThemesListResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  # -------------------------------------------------------------------------
+  # File Access
+  # -------------------------------------------------------------------------
+  /api/v1/access-tokens:
+    post:
+      tags: [File Access]
+      summary: Create signed access tokens for stored files
+      description: |
+        Returns short-lived per-file access tokens that allow the caller
+        to download the referenced files from the underlying storage
+        backend.
+      operationId: createAccessTokens
+      x-rate-limit-category: general
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileAccessRequest'
+      responses:
+        '200':
+          description: Tokens minted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FileAccessResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  # -------------------------------------------------------------------------
+  # Upload / Preprocess / Validate
+  # -------------------------------------------------------------------------
+  /api/v1/upload:
+    post:
+      tags: [Upload]
+      summary: Upload a single file (base64-encoded)
+      description: |
+        Accepts a single file as a base64 string or `data:` URL in the
+        request body. The response contains the uploaded file's id, S3
+        path, and metadata.
+      operationId: uploadFile
+      x-rate-limit-category: general
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadFileRequest'
+      responses:
+        '200':
+          description: File uploaded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadFileResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '415': { $ref: '#/components/responses/UnsupportedFileType' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/preprocess:
+    post:
+      tags: [Upload]
+      summary: Preprocess a file in chunks
+      description: |
+        Accepts one chunk of a multi-chunk file upload. The caller drives
+        chunking via `chunkIndex` and `totalChunks`; chunks for the same
+        upload share a `requestIdentifier`. Once all chunks for a
+        `requestIdentifier` have arrived the file is assembled and made
+        available to downstream operations.
+      operationId: preprocessFile
+      x-rate-limit-category: general
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreprocessFileRequest'
+      responses:
+        '200':
+          description: Chunk received.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreprocessFileResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '415': { $ref: '#/components/responses/UnsupportedFileType' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/validate:
+    post:
+      tags: [Upload]
+      summary: Validate uploaded files and/or web links
+      description: |
+        Validates a set of previously uploaded files (referenced by
+        `fileIdentifiers`) and/or a list of web links. At least one of
+        `fileIdentifiers` or `webLinks` must be non-empty.
+      operationId: validateFiles
+      x-rate-limit-category: general
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateFilesRequest'
+      responses:
+        '200':
+          description: Validation result returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateFilesResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '415': { $ref: '#/components/responses/UnsupportedFileType' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  # -------------------------------------------------------------------------
+  # Template Converter family
+  # -------------------------------------------------------------------------
+  /api/v1/template-conversions:
+    post:
+      tags: [Template Converter]
+      summary: Create a template-conversion job
+      description: |
+        Kicks off a pipeline that applies the target brand template
+        (`templateName`) to the input PowerPoint (`fileId` or
+        `inputDeck`). Returns a `callback_id` to poll. Counted against
+        the `TC_START` usage limit.
+
+        Subsequent calls in the same conversion lifecycle: poll the v2
+        status endpoint at
+        `GET /api/v2/template-converter/status/{callback_id}` until the
+        pipeline reaches a terminal state.
+      operationId: createTemplateConversion
+      x-rate-limit-category: template_converter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateConverterStartRequest'
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Job accepted; client must poll for completion.
+          headers:
+            Idempotency-Replayed:
+              $ref: '#/components/headers/IdempotencyReplayed'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterStartResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/IdempotencyConflict' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v2/template-converter/status/{callback_id}:
+    get:
+      tags: [Template Converter]
+      summary: Poll a template-conversion job (strict status mapping)
+      description: |
+        v2 polling endpoint with **strict HTTP-status mapping**: returns
+        **HTTP 200 only when the conversion has completed successfully**.
+        While the pipeline is still running the status is `in_progress`
+        and the response is **HTTP 202**. On workflow failure the
+        endpoint returns a `4xx` or `5xx` with the standard error
+        envelope.
+
+        Use this endpoint instead of the v1 polling endpoint
+        (`/api/v1/template-converter/status/{callbackId}`) whenever
+        possible — agents can rely on the HTTP status alone to branch on
+        success vs failure, without inspecting body fields.
+      operationId: getTemplateConverterStatusV2
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+        - in: query
+          name: source
+          required: false
+          description: Pass `nexus` to include the full `outputs` blob in
+            the response (intended for Prezent's Nexus front-end).
+          schema:
+            type: string
+            enum: [nexus]
+      responses:
+        '200':
+          description: Conversion completed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterStatusV2SuccessResponse'
+        '202':
+          description: Conversion is still in progress.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterStatusV2InProgressResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/preprocessings:
+    post:
+      tags: [Template Converter]
+      summary: Create a preprocessing chunk for a template-conversion input
+      description: |
+        Accepts one chunk of a multi-chunk PPTX upload, used as the
+        `inputDeck` for a subsequent template-conversion job. Only `.pptx`
+        files are accepted. Collection-level — the upload is grouped by
+        the body's `fileIdentifier` and precedes the creation of the
+        conversion's `callback_id`.
+      operationId: createTemplateConversionPreprocessing
+      x-rate-limit-category: template_converter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreprocessFileRequest'
+      responses:
+        '200':
+          description: Chunk received.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreprocessFileResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '415': { $ref: '#/components/responses/UnsupportedFileType' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/finalisations:
+    post:
+      tags: [Template Converter]
+      summary: Create a finalisation for a chunked PPTX upload
+      description: |
+        Concludes a chunked upload identified by `fileIdentifier`. The
+        finalised file must be a `.pptx`, no larger than 200 MB, and no
+        more than 100 pages. Collection-level — runs before the conversion's
+        `callback_id` exists.
+      operationId: createTemplateConversionFinalisation
+      x-rate-limit-category: template_converter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateConverterFinalprocessRequest'
+      responses:
+        '200':
+          description: File assembled.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterFinalprocessResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '415': { $ref: '#/components/responses/UnsupportedFileType' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/{callback_id}/review-suggestions:
+    get:
+      tags: [Template Converter]
+      summary: Read review suggestions for a template-conversion
+      description: |
+        Returns the list of editorial suggestions produced for the
+        converted deck identified by `callback_id`. Each suggestion may
+        be applied via the corresponding PATCH endpoint.
+      operationId: listTemplateConversionReviewSuggestions
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      responses:
+        '200':
+          description: Suggestions returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterReviewSuggestionsResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+    patch:
+      tags: [Template Converter]
+      summary: Update review suggestions on a template-conversion
+      description: |
+        Applies a subset of editorial suggestions to the converted deck
+        identified by `callback_id`. Kicks off a background pipeline that
+        produces a new derived deck; the response carries a new
+        `callback_id` to poll.
+      operationId: updateTemplateConversionReviewSuggestions
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateConverterReviewSuggestionsPatchRequest'
+      responses:
+        '200':
+          description: Pipeline accepted; poll the returned `callback_id`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterAsyncProcessingResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/{callback_id}/template-changes:
+    post:
+      tags: [Template Converter]
+      summary: Create a template change on a template-conversion
+      description: |
+        Re-runs the conversion pipeline for an already-converted deck
+        against a new target `templateName`. Returns a new `callback_id`
+        to poll.
+      operationId: createTemplateConversionTemplateChange
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateConverterTemplateChangeRequest'
+      responses:
+        '200':
+          description: Pipeline accepted; poll the returned `callback_id`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterAsyncProcessingResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/{callback_id}/download:
+    get:
+      tags: [Template Converter]
+      summary: Read the download URL for a template-conversion
+      description: |
+        Returns a signed download URL for the converted deck identified
+        by `callback_id`. Counted against the `TC_DOWNLOAD` usage limit.
+      operationId: getTemplateConversionDownload
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      responses:
+        '200':
+          description: Signed download URL returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterDownloadResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/{callback_id}/comply-metrics:
+    post:
+      tags: [Template Converter]
+      summary: Create a Comply metrics record on a template-conversion
+      description: |
+        Records compliance metrics for a converted deck. The body is
+        forwarded to the ComplyMetrics service. Typically invoked via a
+        `callback_id + token` URL handed back to the caller after a
+        conversion.
+      operationId: createTemplateConversionComplyMetrics
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+              description: Arbitrary metrics payload forwarded to the ComplyMetrics service.
+      responses:
+        '200':
+          description: Metrics recorded.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterGenericResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/{callback_id}/reactions:
+    put:
+      tags: [Template Converter]
+      summary: Upsert a reaction on a template-conversion
+      description: |
+        Records a like or qualitative feedback against a converted deck.
+        When `type` is `liked` the `value` must be a boolean; when
+        `feedback` the `value` must be a string. Uses PUT (legacy quirk
+        preserved from the original endpoint) rather than POST.
+      operationId: putTemplateConversionReaction
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateConverterReactionFeedbackRequest'
+      responses:
+        '200':
+          description: Reaction/feedback stored.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterReactionFeedbackResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/{callback_id}/work-area-options:
+    get:
+      tags: [Template Converter]
+      summary: Read work-area options for a template-conversion slide
+      description: |
+        Returns the available work-area adjustment options for the given
+        slide of the given conversion job.
+      operationId: listTemplateConversionWorkAreaOptions
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+        - in: query
+          name: slide_index
+          required: true
+          description: Zero-based slide index.
+          schema: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: Work-area options returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterWorkAreaOptionsResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/{callback_id}/work-area-adjustments:
+    post:
+      tags: [Template Converter]
+      summary: Create a work-area adjustment on a template-conversion
+      description: |
+        Applies a selected work-area adjustment to the given slide of a
+        conversion job.
+      operationId: createTemplateConversionWorkAreaAdjustment
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateConverterAdjustWorkAreaRequest'
+      responses:
+        '200':
+          description: Adjustment applied.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterGenericResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/{callback_id}/layouts:
+    get:
+      tags: [Template Converter]
+      summary: Read layout options for a template-conversion
+      description: |
+        Returns the layout options available for the target template
+        and, optionally, the input deck's layouts for the given slide.
+      operationId: listTemplateConversionLayouts
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+        - in: query
+          name: slide_index
+          required: false
+          description: Zero-based slide index. If omitted, returns
+            layouts for every slide.
+          schema: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: Layout options returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterLayoutsResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/{callback_id}/layout-updates:
+    post:
+      tags: [Template Converter]
+      summary: Create a layout update on a template-conversion
+      description: |
+        Updates the layout of a slide and re-renders the affected portion
+        of the converted deck. Returns a new `callback_id` to poll.
+      operationId: createTemplateConversionLayoutUpdate
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateConverterUpdateLayoutRequest'
+      responses:
+        '200':
+          description: Pipeline accepted; poll the returned `callback_id`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterAsyncProcessingResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/{callback_id}/format-modifications:
+    post:
+      tags: [Template Converter]
+      summary: Create a format modification on a template-conversion
+      description: |
+        Applies a batch of format modifications (title-formatting,
+        body-formatting) to a converted deck and re-renders the affected
+        slides. Returns a new `callback_id` to poll.
+      operationId: createTemplateConversionFormatModification
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TemplateConverterModifyFormatRequest'
+      responses:
+        '200':
+          description: Pipeline accepted; poll the returned `callback_id`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterAsyncProcessingResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/template-conversions/{callback_id}/format-modifications/settings:
+    get:
+      tags: [Template Converter]
+      summary: Read available format-modification settings for a template-conversion
+      description: |
+        Returns the available formatting controls (font sizes, weight,
+        alignment) that may be applied to title/body text in a converted
+        deck.
+      operationId: getTemplateConversionFormatModificationSettings
+      x-rate-limit-category: template_converter
+      parameters:
+        - $ref: '#/components/parameters/CallbackIdPath'
+      responses:
+        '200':
+          description: Settings returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateConverterModifyFormatSettingsResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  # -------------------------------------------------------------------------
+  # Webhooks (subscription management plane).
+  #
+  # All paths are scoped to the calling API key. Subscriptions are
+  # per-key — a key can only manage subscriptions it created. The HMAC
+  # secret is returned ONCE on create / rotate; reads only expose the
+  # `secret_prefix` (first 6 chars).
+  # -------------------------------------------------------------------------
+  /api/v1/webhook-subscriptions:
+    post:
+      tags: [Webhooks]
+      summary: Create a webhook subscription
+      description: |
+        Registers a new HTTPS endpoint to receive signed delivery
+        callbacks for the listed event types. Returns the HMAC `secret`
+        ONCE — store it securely. Subsequent reads only expose the
+        `secret_prefix`.
+      operationId: createWebhookSubscription
+      x-rate-limit-category: general
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookSubscriptionCreateRequest'
+      responses:
+        '201':
+          description: Subscription created. Body contains the
+            `secret` — the only response that ever exposes it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSubscriptionCreateResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    get:
+      tags: [Webhooks]
+      summary: List webhook subscriptions
+      description: |
+        Returns the subscriptions owned by the calling API key. Excludes
+        soft-deleted rows. Use the standard cursor-pagination parameters
+        — see [Developer Guide → Pagination](/docs/developer-guide#pagination).
+      operationId: listWebhookSubscriptions
+      x-rate-limit-category: general
+      parameters:
+        - in: query
+          name: limit
+          required: false
+          schema: { type: integer, format: int32, minimum: 1, maximum: 100, default: 25 }
+        - in: query
+          name: cursor
+          required: false
+          schema: { type: string }
+      responses:
+        '200':
+          description: Paginated subscription list.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSubscriptionListResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/webhook-subscriptions/{id}:
+    get:
+      tags: [Webhooks]
+      summary: Read a webhook subscription
+      description: |
+        Returns one subscription. `secret_prefix` (the first 6 chars of
+        the HMAC secret) is exposed for human disambiguation; the full
+        secret is never returned by a read.
+      operationId: getWebhookSubscription
+      x-rate-limit-category: general
+      parameters:
+        - $ref: '#/components/parameters/WebhookSubscriptionIdPath'
+      responses:
+        '200':
+          description: Subscription found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSubscriptionReadResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    patch:
+      tags: [Webhooks]
+      summary: Update a webhook subscription
+      description: |
+        Partial update. Any combination of `url`, `events`, `description`,
+        or `status` may be supplied. Changes to `url` are re-validated
+        against the SSRF / scheme / port rules. Setting `status` to
+        `"active"` re-enables an auto-disabled subscription.
+      operationId: updateWebhookSubscription
+      x-rate-limit-category: general
+      parameters:
+        - $ref: '#/components/parameters/WebhookSubscriptionIdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookSubscriptionUpdateRequest'
+      responses:
+        '200':
+          description: Subscription updated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSubscriptionReadResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/UnprocessableEntity' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+    delete:
+      tags: [Webhooks]
+      summary: Delete a webhook subscription
+      description: |
+        Soft-deletes the subscription. The `id` is permanently retired
+        — no future deliveries will be attempted, and the row is
+        excluded from list responses.
+      operationId: deleteWebhookSubscription
+      x-rate-limit-category: general
+      parameters:
+        - $ref: '#/components/parameters/WebhookSubscriptionIdPath'
+      responses:
+        '200':
+          description: Subscription deleted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSubscriptionDeleteResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/webhook-subscriptions/{id}/rotate-secret:
+    post:
+      tags: [Webhooks]
+      summary: Rotate the HMAC secret for a subscription
+      description: |
+        Generates a new HMAC `secret` and invalidates the old one
+        immediately. Returns the new secret ONCE — store it before
+        responding to the caller. There is no grace window during which
+        both secrets verify; if you need an overlap, stand up a second
+        subscription on a distinct path, switch over, then delete the
+        old one.
+      operationId: rotateWebhookSubscriptionSecret
+      x-rate-limit-category: general
+      parameters:
+        - $ref: '#/components/parameters/WebhookSubscriptionIdPath'
+      responses:
+        '200':
+          description: Secret rotated. Body contains the new
+            `secret` — the only place it is ever returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSubscriptionRotateResponse'
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  /api/v1/webhook-subscriptions/{id}/test:
+    post:
+      tags: [Webhooks]
+      summary: Send a test delivery to a subscription
+      description: |
+        Immediately POSTs a synthetic `webhook.test` event to the
+        subscription's URL (signed with the current secret, 5s timeout,
+        no retries) and returns the response status + body verbatim.
+        Use this to verify the receiver's signature-verification path
+        before real traffic flows.
+      operationId: testWebhookSubscription
+      x-rate-limit-category: general
+      parameters:
+        - $ref: '#/components/parameters/WebhookSubscriptionIdPath'
+      responses:
+        '200':
+          description: Test delivery attempted. The `delivery.ok` field
+            indicates whether the receiver returned a 2xx.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookSubscriptionTestResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+  # =========================================================================
+  # Streaming (Server-Sent Events)
+  # =========================================================================
+  /api/v1/streams/sessions:
+    post:
+      tags: [Streaming]
+      summary: Open a stream session for an existing job
+      description: |
+        Returns a short-lived URL (5-minute TTL) that you open with
+        EventSource (or any SSE client) to receive a live feed of
+        progress events for the job identified by `callback_id`. The
+        token in the URL is bound to your API key and to that
+        `callback_id` only.
+
+        See the [Streaming guide](/docs/streaming) for the full
+        walk-through, the event catalog, and reconnect semantics.
+      operationId: createStreamSession
+      x-rate-limit-category: general
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StreamSessionCreateRequest'
+      responses:
+        '201':
+          description: A streaming URL has been minted.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StreamSessionCreateResponse'
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '429': { $ref: '#/components/responses/RateLimited' }
+        '500': { $ref: '#/components/responses/InternalServerError' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+        '504': { $ref: '#/components/responses/GatewayTimeout' }
+
+# =========================================================================
+# Webhooks — events Prezent POSTs to your subscribed HTTPS endpoint.
+# Manage subscriptions via the /api/v1/webhook-subscriptions endpoints above.
+# Every delivery is signed (X-Prezent-Signature: HMAC-SHA256 of
+# "{timestamp}.{raw_body}"); delivery is at-least-once with retries at
+# +1m, +5m, +30m, +2h, +6h, +18h over a 21-hour window, then a dead-letter
+# queue. A subscription auto-disables after 50 consecutive failures.
+# =========================================================================
+webhooks:
+  autogeneration.completed:
+    post:
+      tags: [Webhooks]
+      summary: AutoGenerator job completed
+      description: |
+        Delivered when an AutoGenerator job finishes successfully. Verify
+        the `X-Prezent-Signature` header and deduplicate on the event `id`.
+      operationId: webhookAutogenerationCompleted
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookEvent' }
+      responses:
+        '200':
+          description: Acknowledged — return any 2xx within 10 seconds to mark the delivery successful.
+  autogeneration.failed:
+    post:
+      tags: [Webhooks]
+      summary: AutoGenerator job failed
+      description: Delivered when an AutoGenerator job fails. Same envelope, signature, and retry semantics as `autogeneration.completed`.
+      operationId: webhookAutogenerationFailed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookEvent' }
+      responses:
+        '200': { description: Acknowledged — any 2xx within 10 seconds. }
+  template_conversion.completed:
+    post:
+      tags: [Webhooks]
+      summary: Template Converter job completed
+      description: Delivered when a Template Converter job finishes successfully.
+      operationId: webhookTemplateConversionCompleted
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookEvent' }
+      responses:
+        '200': { description: Acknowledged — any 2xx within 10 seconds. }
+  template_conversion.failed:
+    post:
+      tags: [Webhooks]
+      summary: Template Converter job failed
+      description: Delivered when a Template Converter job fails.
+      operationId: webhookTemplateConversionFailed
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookEvent' }
+      responses:
+        '200': { description: Acknowledged — any 2xx within 10 seconds. }
+  webhook.test:
+    post:
+      tags: [Webhooks]
+      summary: Test delivery
+      description: |
+        Sent once when you call the subscription `test` endpoint. Single-shot
+        — delivered once with no retries — so you can verify connectivity and
+        signature handling before production traffic flows.
+      operationId: webhookTest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookEvent' }
+      responses:
+        '200': { description: Acknowledged — any 2xx within 10 seconds. }
+
+# =========================================================================
+# Components
+# =========================================================================
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque
+      description: |
+        Bearer token authentication. Supply the API key issued by
+        Customer Success as `Authorization: Bearer <api_key>`. The API
+        does NOT accept the AWS `x-api-key` header. Keys may have an
+        expiry date; expired keys return `401 EXPIRED_API_KEY`. Keys are
+        scoped to specific paths; calling an unauthorised path returns
+        `404 ENDPOINT_NOT_FOUND`.
+
+  parameters:
+    CallbackIdPath:
+      name: callback_id
+      in: path
+      required: true
+      description: Server-issued opaque identifier returned by an async
+        kick-off endpoint. Used to poll status or fetch derived
+        artefacts.
+      schema:
+        type: string
+        minLength: 1
+
+    WebhookSubscriptionIdPath:
+      name: id
+      in: path
+      required: true
+      description: The public subscription id returned by `POST
+        /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`.
+      schema:
+        type: string
+        pattern: '^whsub_[a-f0-9]{32}$'
+        example: whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      description: |
+        Optional client-generated key (a UUID is ideal) that makes a
+        write request safe to retry. The first request is processed and
+        its response cached for 24 hours; an identical retry with the
+        same key returns the cached response plus an
+        `Idempotency-Replayed: true` header, so the job is never created
+        twice. Reusing a key with a **different** body returns
+        `409 IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_BODY`.
+      schema:
+        type: string
+        example: 8e6df756-18f6-4f16-8e12-7d7a5c5cb181
+
+  headers:
+    IdempotencyReplayed:
+      description: Present and set to `true` when this response was served
+        from the idempotency cache for a repeated `Idempotency-Key`.
+      schema: { type: string, enum: ['true'] }
+    XRateLimitLimit:
+      description: |
+        The configured request limit for the rate-limit category
+        (requests per 60-second window) that applied to this call.
+        The applicable category is the operation's `x-rate-limit-category`.
+        Returned on every response (success and 429) so clients can
+        self-throttle. See the Rate limits guide for the default
+        per-category numbers.
+      schema: { type: integer, format: int32, minimum: 0 }
+    XRateLimitRemaining:
+      description: |
+        Approximate number of requests remaining in the current
+        60-second window for this caller and category.
+      schema: { type: integer, format: int32, minimum: 0 }
+    XRateLimitReset:
+      description: Unix timestamp (seconds) when the current rate-limit
+        window resets.
+      schema: { type: integer, format: int64, minimum: 0 }
+    RetryAfter:
+      description: Number of seconds the client should wait before
+        retrying.
+      schema: { type: integer, format: int32, minimum: 0 }
+
+  schemas:
+
+    # ---- Envelopes -------------------------------------------------------
+    SuccessEnvelope:
+      type: object
+      description: |
+        Standard success envelope. Endpoint-specific schemas extend this
+        and constrain the `data` property to their concrete shape.
+        Additional legacy keys (`status`, `log`, …) may appear alongside
+        `success`/`data` for backwards compatibility, and some legacy
+        handlers omit `success`, so it is not marked required.
+      required: [data]
+      properties:
+        success:
+          type: boolean
+          description: '`true` on success (omitted by some legacy handlers).'
+        data:
+          type: object
+          description: Endpoint-specific payload.
+      additionalProperties: true
+
+    ErrorEnvelope:
+      type: object
+      description: |
+        Standard error envelope returned by every documented endpoint
+        (both in-Lambda and gateway-level errors). Additional legacy
+        keys may appear alongside `success`/`data`/`error` for
+        backwards compatibility.
+      required: [success, data, error]
+      properties:
+        success:
+          type: boolean
+          const: false
+          description: Always `false` on error.
+        data:
+          type: ['object', 'null']
+          description: Always `null` on error.
+        error:
+          type: object
+          required: [code, message]
+          description: Error description.
+          properties:
+            code:
+              $ref: '#/components/schemas/ErrorCode'
+            message:
+              type: string
+              description: Human-readable error description (English).
+            details:
+              type: object
+              description: Optional structured details (validation
+                failures, downstream-service info, etc.).
+              additionalProperties: true
+      additionalProperties: true
+
+    ErrorCode:
+      type: string
+      description: |
+        Stable identifier for an error condition. Codes never change
+        meaning or HTTP status once published.
+      enum:
+        - INVALID_API_KEY
+        - EXPIRED_API_KEY
+        - UNAUTHORIZED
+        - FORBIDDEN
+        - ENDPOINT_NOT_FOUND
+        - RESOURCE_NOT_FOUND
+        - NOT_FOUND
+        - METHOD_NOT_ALLOWED
+        - UNSUPPORTED_FILE_TYPE
+        - INVALID_INPUT
+        - UNPROCESSABLE_ENTITY
+        - RATE_LIMIT_EXCEEDED
+        - USAGE_LIMIT_EXCEEDED
+        - TOO_MANY_REQUESTS
+        - THROTTLED
+        - BAD_REQUEST
+        - INVALID_JSON
+        - MISSING_REQUIRED_FIELD
+        - MISSING_QUERY_PARAM
+        - MISSING_CALLBACK_ID
+        - MISSING_SLIDES_ARRAY
+        - MISSING_PROMPT
+        - MISSING_TEMPLATE_ID
+        - MISSING_FILE_CONTENT
+        - MISSING_SHARE_DETAILS
+        - INVALID_TYPE
+        - INVALID_DATA
+        - INVALID_DATA_TYPE
+        - INVALID_PAYLOAD
+        - INVALID_REQUEST
+        - API_REQUEST_FAILED
+        - FILE_UPLOAD_FAILED
+        - MAX_RETRIES_EXCEEDED
+        - EXTERNAL_SERVICE_ERROR
+        - INTERNAL_SERVER_ERROR
+        - SERVICE_UNAVAILABLE
+        - GATEWAY_TIMEOUT
+
+    CallbackEnvelope:
+      description: Async-start envelope. `data.callback_id` is the value
+        the client polls.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [callback_id]
+              properties:
+                callback_id:
+                  type: string
+                  description: Server-issued opaque identifier.
+                token:
+                  type: string
+                  description: Optional one-time token used by
+                    callback-id-scoped URLs (for example status polling
+                    when no Bearer key is available).
+              additionalProperties: true
+
+    RateLimitInfo:
+      type: object
+      description: Out-of-body rate-limit information. Returned via
+        headers, not in the response body; this schema exists for tooling
+        only.
+      properties:
+        limit:
+          type: integer
+          description: Configured requests-per-window for the category.
+        remaining:
+          type: integer
+          description: Approximate requests remaining in the current
+            window.
+        reset:
+          type: integer
+          format: int64
+          description: Unix timestamp (seconds) when the window resets.
+        retry_after_seconds:
+          type: integer
+          description: Seconds to wait before retrying.
+
+    # ---- Test / Health ---------------------------------------------------
+    TestResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: Fixed greeting string.
+              additionalProperties: true
+
+    HealthResponse:
+      description: Liveness / health response. The simple liveness probe
+        returns just a `message`; component health checks may return a
+        richer `data` payload (per-service status, timestamp).
+      type: object
+      additionalProperties: true
+      properties:
+        message:
+          type: string
+          description: Liveness message.
+        status:
+          type: string
+          description: Overall status, when reported.
+        data:
+          type: object
+          additionalProperties: true
+          description: Optional richer health payload.
+          properties:
+            message:
+              type: string
+            category:
+              type: string
+              description: The category that was checked.
+            services:
+              type: array
+              description: Per-component status report.
+              items:
+                type: object
+                additionalProperties: true
+                properties:
+                  name:
+                    type: string
+                  status:
+                    type: string
+                  detail:
+                    type: string
+            timestamp:
+              type: string
+              format: date-time
+
+    # ---- AutoGenerator: requests ----------------------------------------
+    AutoGeneratorStartRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator`.
+      required: [prompt]
+      properties:
+        prompt:
+          type: string
+          description: Natural-language description of the deck to
+            generate.
+        text:
+          type: string
+          description: Additional free-text context to ground the deck.
+        files:
+          type: array
+          description: Previously uploaded supporting files (by id).
+          items: { type: string }
+        web_links:
+          type: array
+          description: Web URLs to ingest as additional context.
+          items: { type: string, format: uri }
+        image_ids:
+          type: array
+          description: Image identifiers to source from the caller's
+            library.
+          items: { type: string }
+        audience:
+          type: string
+          description: Target audience id or persona name.
+        template_id:
+          type: string
+          description: Target theme/template id.
+        settings:
+          type: object
+          description: Per-generation settings.
+          properties:
+            add_sources_to_footer:
+              type: boolean
+              description: Render source attributions in slide footers.
+            add_sources_to_slides_note:
+              type: boolean
+              description: Render source attributions in slide notes.
+            generate_speaker_notes:
+              type: boolean
+              description: Generate speaker notes.
+            extract_graph_data:
+              type: boolean
+              description: Extract structured data from images/charts in
+                supporting files.
+          additionalProperties: true
+      additionalProperties: true
+
+    AutoGeneratorStatusBulkRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/autogenerator/status-bulk`.
+      required: [callback_ids]
+      properties:
+        callback_ids:
+          type: array
+          description: Callback ids to look up.
+          minItems: 1
+          items: { type: string }
+      additionalProperties: true
+
+    AutoGeneratorMetaRequest:
+      type: object
+      description: Request body for `POST /api/v1/autogenerator/meta`.
+      required: [assetIds, callbackID]
+      properties:
+        assetIds:
+          type: array
+          description: Asset ids to look up metadata for.
+          minItems: 1
+          items: { type: string }
+        callbackID:
+          type: string
+          description: Parent deck callback id. (Legacy camelCase
+            preserved for backwards compatibility; new clients should
+            also continue to send this field.)
+      additionalProperties: true
+
+    AutoGeneratorDownloadRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/autogenerator/download`.
+      required: [callback_id]
+      properties:
+        callback_id:
+          type: string
+          minLength: 1
+          description: Deck callback id to merge & download.
+        sources:
+          type: object
+          description: Source-attribution configuration for the merged
+            output.
+          properties:
+            add_sources_to_slides_note:
+              type: boolean
+              description: Render source attributions in slide notes.
+          additionalProperties: true
+        speaker_notes:
+          type: object
+          description: Speaker-notes configuration for the merged
+            output.
+          properties:
+            add_speaker_notes_to_slides_note:
+              type: boolean
+              description: Merge speaker notes into slide notes.
+            speaker_notes_type:
+              type: string
+              description: Speaker-notes formatting style.
+          additionalProperties: true
+        outputPath:
+          type: string
+          description: Optional S3 key (path) for the merged output.
+        sections:
+          type: array
+          description: Optional list of sections to include (defaults to
+            all).
+          items: { type: string }
+        outputFormat:
+          type: string
+          description: Output format (for example `pptx`, `pdf`).
+        outputBucket:
+          type: string
+          description: Optional S3 bucket for the merged output.
+      additionalProperties: true
+
+    AutoGeneratorRegenerateRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/autogenerator/regenerate`.
+      required: [callback_id]
+      properties:
+        callback_id:
+          type: string
+          description: Existing deck callback id.
+        audience:
+          type: string
+          description: Override audience for the regenerated portion.
+        template_code:
+          type: string
+          description: Override template code for the regenerated
+            portion.
+        slide_override:
+          type: object
+          description: Slide-level overrides.
+          additionalProperties: true
+        story_content_override:
+          type: object
+          description: Narrative-content overrides.
+          additionalProperties: true
+        context:
+          type: object
+          description: Additional context to inject into the regenerate
+            pass.
+          additionalProperties: true
+        duration:
+          type: string
+          description: Desired duration for the regenerated section.
+        voice_settings:
+          type: object
+          description: Voice/tone settings.
+          additionalProperties: true
+        data_sources_settings:
+          type: object
+          description: Data-source configuration.
+          additionalProperties: true
+        preserve_text:
+          type: boolean
+          description: Preserve existing text where possible.
+      additionalProperties: true
+
+    AutoGeneratorNodeChangeRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/autogenerator/node-change`.
+      required: [callback_id, slide_callback_id]
+      properties:
+        callback_id:
+          type: string
+          description: Deck callback id.
+        slide_callback_id:
+          type: string
+          description: Slide callback id to modify.
+        slide_override:
+          type: object
+          description: Node-level changes to apply to the slide.
+          additionalProperties: true
+      additionalProperties: true
+
+    AutoGeneratorSlideDataRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/autogenerator/slide-data`.
+      required: [slide_callback_id]
+      properties:
+        slide_callback_id:
+          type: string
+          description: Slide callback id whose data to return.
+      additionalProperties: true
+
+    AutoGeneratorExtractImagesRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/autogenerator/extract-images`.
+      required: [s3_bucket, s3_path]
+      properties:
+        s3_bucket:
+          type: string
+          description: S3 bucket containing the PowerPoint.
+        s3_path:
+          type: string
+          description: S3 key (path) of the PowerPoint.
+        force_update:
+          type: boolean
+          description: Re-extract even if cached results exist.
+      additionalProperties: true
+
+    AutoGeneratorBrandImageSearchRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/autogenerator/brand-image-search`.
+      required: [callback_id]
+      properties:
+        callback_id:
+          type: string
+          description: Deck callback id (used for scoping to the right
+            company).
+        query:
+          type: string
+          description: Search query. Defaults to `*` (return all).
+        skip:
+          type: integer
+          minimum: 0
+          description: Number of results to skip (pagination offset).
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          description: Maximum number of results to return.
+      additionalProperties: true
+
+    AutoGeneratorLibraryImageSearchRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/autogenerator/library-image-search`.
+      properties:
+        searchKey:
+          type: string
+          description: Search query. If blank, derived from the supplied
+            slide context.
+        limit:
+          type: integer
+          default: 30
+          description: Maximum number of results.
+        offset:
+          type: integer
+          default: 0
+          description: Result offset.
+        slide_callback_id:
+          type: string
+          description: Optional slide callback id used to infer
+            `searchKey`.
+      additionalProperties: true
+
+    AutoGeneratorReplaceImageRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/autogenerator/replace-image`.
+      required: [oldImage, newImage, slide_callback_id]
+      properties:
+        oldImage:
+          type: object
+          description: Description of the existing image being replaced.
+          required: [meta, shapeType]
+          properties:
+            meta:
+              type: object
+              description: Image metadata (size, position, etc.).
+              additionalProperties: true
+            shapeType:
+              type: string
+              description: PowerPoint shape type.
+          additionalProperties: true
+        newImage:
+          type: object
+          description: Description of the replacement image.
+          required: [source]
+          properties:
+            imageIndex:
+              type: integer
+              description: Index within the source result set.
+            source:
+              type: string
+              enum: [myWorkspace, adobe, freepik, upload, extracted, s3, brand-images]
+              description: Source of the replacement image.
+            s3_path:
+              type: string
+              description: S3 key when `source` is `s3` or `upload`.
+            s3_bucket:
+              type: string
+              description: S3 bucket when `source` is `s3` or `upload`.
+            id:
+              type: string
+              description: Image id when `source` is `adobe`, `freepik`,
+                `myWorkspace`, `brand-images`, or `extracted`.
+            image:
+              type: string
+              description: Base64-encoded image content for inline
+                uploads.
+            extension:
+              type: string
+              description: File extension (e.g. `png`, `jpg`).
+          additionalProperties: true
+        slide_callback_id:
+          type: string
+          description: Slide callback id where the image lives.
+        duplicate_slide_callback_id:
+          type: string
+          description: Optional duplicate slide id to mirror the
+            replacement onto.
+      additionalProperties: true
+
+    AutoGeneratorReactionFeedbackRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/autogenerator/reaction-feedback`.
+      required: [uuid, type, value]
+      properties:
+        uuid:
+          type: string
+          description: Target asset uuid (deck or slide).
+        type:
+          type: string
+          enum: [liked, feedback]
+          description: Reaction kind.
+        value:
+          description: When `type=liked`, a boolean. When
+            `type=feedback`, a string.
+          oneOf:
+            - type: boolean
+            - type: string
+        shareDetails:
+          type: object
+          description: Additional details. **Required** when
+            `type=feedback`.
+          additionalProperties: true
+      additionalProperties: true
+
+    AutoGeneratorSlideActionsRequest:
+      type: object
+      description: |
+        Request body for `POST /api/v1/autogenerator/slide-actions`.
+        Required fields depend on `action`:
+          - `duplicate` / `delete` → `deck_callback_id`,
+            `slide_callback_id`.
+          - `add_sources_to_slides_note` / `speaker_notes` → `uuid`,
+            `type`, `data`.
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [duplicate, delete, add_sources_to_slides_note, speaker_notes]
+          description: Sub-action to perform.
+        deck_callback_id:
+          type: string
+          description: Deck callback id (required for `duplicate` /
+            `delete`).
+        slide_callback_id:
+          type: string
+          description: Slide callback id (required for `duplicate` /
+            `delete`).
+        uuid:
+          type: string
+          description: Target uuid (required for note-style actions).
+        type:
+          type: string
+          description: Note-style sub-type (required for note-style
+            actions).
+        data:
+          type: object
+          description: Action-specific payload (required for note-style
+            actions).
+          additionalProperties: true
+      additionalProperties: true
+
+    # ---- AutoGenerator: responses ----------------------------------------
+    AutoGeneratorStartResponse:
+      description: Response body for `POST /api/v1/autogenerator`.
+      allOf:
+        - $ref: '#/components/schemas/CallbackEnvelope'
+
+    AutoGeneratorStatusResponse:
+      description: Response body for `GET /api/v1/autogenerator/status`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/AutoGeneratorStatusData'
+
+    AutoGeneratorStatusData:
+      type: object
+      description: |
+        AutoGenerator job state. The handler emits many legacy top-level
+        fields alongside the documented ones; only the documented fields
+        are part of the contract.
+      properties:
+        status:
+          type: string
+          enum: [in_progress, success, failed]
+          description: Job status.
+        callback_id:
+          type: string
+          description: The callback id being polled.
+        prompt:
+          type: string
+          description: Original prompt that initiated the job.
+        fileName:
+          type: string
+          description: Filename of the generated deck.
+        allSlides:
+          type: array
+          description: Generated slides (present once `status=success`).
+          items:
+            type: object
+            additionalProperties: true
+        extracted_images:
+          type: array
+          description: Images extracted from supporting files.
+          items:
+            type: object
+            additionalProperties: true
+        company:
+          type: string
+          description: Owning company id.
+        companyDisplayName:
+          type: string
+          description: Owning company display name.
+        final_output:
+          type: object
+          description: Final-output blob (present once
+            `status=success`).
+          additionalProperties: true
+        template_code:
+          type: string
+          description: Target template code used for generation.
+        audience:
+          type: string
+          description: Target audience used for generation.
+        execution_start:
+          type: string
+          format: date-time
+          description: Pipeline start time.
+        execution_end:
+          type: string
+          format: date-time
+          description: Pipeline end time (present once terminal).
+        presentation_theme:
+          type: object
+          description: Resolved theme metadata.
+          additionalProperties: true
+        voice_settings:
+          type: object
+          description: Voice/tone settings applied.
+          additionalProperties: true
+        speaker_notes:
+          type: object
+          description: Speaker-notes configuration applied.
+          additionalProperties: true
+        cached:
+          type: boolean
+          description: Whether this response was served from cache.
+        cached_at:
+          type: string
+          format: date-time
+          description: Timestamp of the cached entry.
+      additionalProperties: true
+
+    AutoGeneratorStatusBulkResponse:
+      description: Response body for
+        `POST /api/v1/autogenerator/status-bulk`. Standalone schema — unlike
+        most responses, `data` is an array, so this does not extend
+        SuccessEnvelope (whose `data` is an object).
+      type: object
+      required: [success, data]
+      additionalProperties: true
+      properties:
+        success:
+          type: boolean
+          const: true
+          description: Always `true` on success.
+        data:
+          type: array
+          description: One entry per requested callback id.
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              slide_id:
+                type: string
+                description: Slide id within the deck.
+              layouts:
+                type: array
+                description: Layouts available for this slide.
+                items:
+                  type: object
+                  additionalProperties: true
+
+    AutoGeneratorMetaResponse:
+      description: Response body for `POST /api/v1/autogenerator/meta`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              description: Metadata payload from the SlideMeta service
+                (passthrough).
+              additionalProperties: true
+
+    AutoGeneratorDownloadResponse:
+      description: Response body for
+        `POST /api/v1/autogenerator/download`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [download_url]
+              properties:
+                status:
+                  type: string
+                  enum: [success]
+                  description: Merge status.
+                output_file:
+                  type: string
+                  description: S3 key of the merged file.
+                download_url:
+                  type: string
+                  format: uri
+                  description: Signed download URL.
+                message:
+                  type: string
+                  description: Human-readable confirmation.
+              additionalProperties: true
+
+    AutoGeneratorRegenerateResponse:
+      description: Response body for
+        `POST /api/v1/autogenerator/regenerate`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [new_callback_id]
+              properties:
+                new_callback_id:
+                  type: string
+                  description: Callback id to poll for the regenerate
+                    sub-job.
+                message:
+                  type: string
+                  description: Human-readable confirmation.
+              additionalProperties: true
+
+    AutoGeneratorGenericDataResponse:
+      description: Generic success envelope where `data` is an opaque
+        object passed through from a downstream service. Used by
+        node-change, slide-data, extract-images.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              description: Downstream payload (shape varies).
+              additionalProperties: true
+
+    AutoGeneratorMessageDataResponse:
+      description: Success envelope with a human-readable `message`
+        alongside `data`. Used by image-search and replace-image.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              description: Service-specific payload.
+              additionalProperties: true
+
+    AutoGeneratorReactionFeedbackResponse:
+      description: Response body for
+        `POST /api/v1/autogenerator/reaction-feedback`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                uuid:
+                  type: string
+                  description: Target asset uuid.
+                type:
+                  type: string
+                  enum: [liked, feedback]
+                  description: Reaction kind.
+                value:
+                  description: Recorded value.
+                  oneOf:
+                    - type: boolean
+                    - type: string
+                message:
+                  type: string
+                  description: Human-readable confirmation.
+              additionalProperties: true
+
+    AutoGeneratorSlideActionsResponse:
+      description: |
+        Response body for `POST /api/v1/autogenerator/slide-actions`.
+        The `data` shape depends on the requested `action`:
+          - `duplicate` → `{ new_callback_id }`.
+          - `delete` → `{ deleted_slide_id }`.
+          - `add_sources_to_slides_note` / `speaker_notes` → service
+            payload.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                new_callback_id:
+                  type: string
+                  description: Returned for `action=duplicate`.
+                deleted_slide_id:
+                  type: string
+                  description: Returned for `action=delete`.
+                message:
+                  type: string
+                  description: Human-readable confirmation.
+              additionalProperties: true
+
+    # ---- Audiences -------------------------------------------------------
+    AudiencesSearchRequest:
+      type: object
+      description: Request body for `POST /api/v1/audiences/search`.
+      properties:
+        query:
+          type: string
+          description: Free-text search query.
+        id:
+          type: string
+          description: Filter to a single audience by id.
+        sort:
+          type: string
+          description: Sort expression (for example `name:asc`).
+        filterBy:
+          type: object
+          description: Field-level filter.
+          additionalProperties: true
+        filterByCollection:
+          type: object
+          description: Collection-level filter.
+          additionalProperties: true
+        fields:
+          type: array
+          description: Subset of fields to return.
+          items: { type: string }
+        extraFields:
+          type: array
+          description: Additional fields to include beyond defaults.
+          items: { type: string }
+        limit:
+          type: integer
+          default: 15
+          description: Maximum number of results.
+      additionalProperties: true
+
+    AudiencesListResponse:
+      description: Response body for `GET /api/v1/audiences` and
+        `POST /api/v1/audiences/search`. `result` and `items` are the same
+        array of audience profiles (`items` is the pagination alias).
+      type: object
+      additionalProperties: true
+      required: [result]
+      properties:
+        success:
+          type: boolean
+          description: Always `true` on success.
+        result:
+          type: array
+          description: Audience profiles.
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              id:
+                type: string
+                description: Audience identifier.
+              name:
+                type: string
+                description: Audience name.
+        items:
+          type: array
+          description: Same audience profiles as `result` (present when paginating).
+          items:
+            type: object
+            additionalProperties: true
+        next_cursor:
+          type: ['string', 'null']
+          description: Opaque cursor for the next page, or `null` on the last
+            page. Pagination is opt-in — omit `limit`/`cursor` to receive the
+            full list.
+
+    # ---- Themes ----------------------------------------------------------
+    ThemesListResponse:
+      description: Response body for `GET /api/v1/themes` and the
+        templates endpoints under autogenerator/template-converter. `data`
+        is the array of themes/templates; `next_cursor` is a sibling field.
+      type: object
+      additionalProperties: true
+      required: [data]
+      properties:
+        success:
+          type: boolean
+          description: Always `true` on success.
+        data:
+          type: array
+          description: Themes / templates.
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              id:
+                type: string
+                description: Theme identifier.
+              name:
+                type: string
+                description: Theme display name.
+              code:
+                type: string
+                description: Internal theme code.
+              source:
+                type: string
+                description: Origin (e.g. brand, prezent).
+        next_cursor:
+          type: ['string', 'null']
+          description: Opaque cursor for the next page, or `null` on the last
+            page. Pagination is opt-in — omit `limit`/`cursor` to receive the
+            full list.
+
+    # ---- File Access -----------------------------------------------------
+    FileAccessRequest:
+      type: object
+      description: Request body for `POST /api/v1/file-access`.
+      required: [filePaths]
+      properties:
+        filePaths:
+          type: array
+          description: List of stored file paths to mint tokens for.
+          minItems: 1
+          items: { type: string }
+        source:
+          type: string
+          enum: [betaimages, magikarp]
+          description: Storage backend source.
+      additionalProperties: true
+
+    FileAccessResponse:
+      description: Response body for `POST /api/v1/file-access`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [access_tokens]
+              properties:
+                access_tokens:
+                  type: object
+                  description: Map of `filePath` → signed access token.
+                  additionalProperties:
+                    type: string
+                    description: Signed access token for the
+                      corresponding file path.
+                message:
+                  type: string
+                  description: Human-readable confirmation.
+              additionalProperties: true
+
+    # ---- Upload / Preprocess / Validate ----------------------------------
+    UploadFileRequest:
+      type: object
+      description: Request body for `POST /api/v1/upload`.
+      required: [fileContent, fileName]
+      properties:
+        fileContent:
+          type: string
+          description: File content as a base64 string or `data:` URL.
+        fileName:
+          type: string
+          description: Original filename including extension.
+      additionalProperties: true
+
+    UploadFileResponse:
+      description: Response body for `POST /api/v1/upload`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: object
+                  required: [file_id, file_name, file_type, s3_path, s3_bucket]
+                  properties:
+                    file_id:
+                      type: string
+                      description: Internal id of the uploaded file.
+                    file_name:
+                      type: string
+                      description: Original filename.
+                    file_type:
+                      type: string
+                      description: MIME type / detected file type.
+                    s3_path:
+                      type: string
+                      description: S3 key of the uploaded file.
+                    s3_bucket:
+                      type: string
+                      description: S3 bucket of the uploaded file.
+                  additionalProperties: true
+                message:
+                  type: string
+                  description: Human-readable confirmation.
+              additionalProperties: true
+
+    PreprocessFileRequest:
+      type: object
+      description: Request body for `POST /api/v1/preprocess` and
+        `POST /api/v1/template-converter/preprocess`.
+      required: [fileContent, fileName, chunkIndex, totalChunks, requestIdentifier]
+      properties:
+        fileContent:
+          type: string
+          description: Chunk content as base64 / `data:` URL.
+        fileName:
+          type: string
+          description: Original filename including extension.
+        chunkIndex:
+          type: integer
+          minimum: 0
+          description: Zero-based index of this chunk.
+        totalChunks:
+          type: integer
+          minimum: 1
+          description: Total number of chunks for this upload.
+        requestIdentifier:
+          type: string
+          description: Caller-supplied identifier that groups chunks of
+            the same upload.
+      additionalProperties: true
+
+    PreprocessFileResponse:
+      description: Response body for `POST /api/v1/preprocess` and
+        `POST /api/v1/template-converter/preprocess`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [request_identifier, file_name]
+              properties:
+                request_identifier:
+                  type: string
+                  description: The caller-supplied identifier.
+                file_name:
+                  type: string
+                  description: The filename that was processed.
+                message:
+                  type: string
+                  description: Human-readable confirmation.
+              additionalProperties: true
+
+    ValidateFilesRequest:
+      type: object
+      description: |
+        Request body for `POST /api/v1/validate`. At least one of
+        `fileIdentifiers` or `webLinks` must be non-empty.
+      properties:
+        fileIdentifiers:
+          type: object
+          description: Map of `uuid` → `fileName` for previously uploaded
+            files.
+          additionalProperties:
+            type: string
+            description: Original filename for that uuid.
+        webLinks:
+          type: array
+          description: List of URLs to validate.
+          items: { type: string, format: uri }
+      additionalProperties: true
+
+    ValidateFilesResponse:
+      description: Response body for `POST /api/v1/validate`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                files:
+                  type: array
+                  description: Per-file validation results.
+                  items:
+                    type: object
+                    properties:
+                      uuid:
+                        type: string
+                        description: File uuid.
+                      file_name:
+                        type: string
+                        description: Original filename.
+                      valid:
+                        type: boolean
+                        description: Whether the file passed validation.
+                      reason:
+                        type: string
+                        description: Failure reason when `valid=false`.
+                    additionalProperties: true
+                web_links:
+                  type: array
+                  description: Per-link validation results.
+                  items:
+                    type: object
+                    properties:
+                      url:
+                        type: string
+                        description: The link.
+                      valid:
+                        type: boolean
+                        description: Whether the link is reachable and
+                          ingestable.
+                      reason:
+                        type: string
+                        description: Failure reason when `valid=false`.
+                    additionalProperties: true
+                message:
+                  type: string
+                  description: Human-readable confirmation.
+              additionalProperties: true
+
+    # ---- Template Converter: requests ------------------------------------
+    TemplateConverterStartRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/template-converter/start`.
+      required: [templateName]
+      properties:
+        fileId:
+          type: string
+          description: Identifier of a previously uploaded input deck.
+            Mutually exclusive with `inputDeck`.
+        inputDeck:
+          type: object
+          description: Inline reference to the input deck (S3 path /
+            chunk identifier). Mutually exclusive with `fileId`.
+          additionalProperties: true
+        templateName:
+          type: string
+          description: Name of the target brand template.
+        includeImageWithoutData:
+          type: boolean
+          description: Carry over images that have no associated data.
+        includeImageWithData:
+          type: boolean
+          description: Carry over images that have associated data.
+        includeIcons:
+          type: boolean
+          description: Carry over icons.
+        includeSpecialColor:
+          type: boolean
+          description: Preserve special color treatments from the source
+            deck.
+        settings:
+          type: object
+          description: Per-conversion settings.
+          properties:
+            ai_mode:
+              type: string
+              description: Conversion AI mode.
+            work_area_option:
+              type: string
+              description: Default work-area option.
+            modifyFormat:
+              type: object
+              description: Default formatting overrides.
+              additionalProperties: true
+            color_preference:
+              type: string
+              description: Color treatment preference.
+            content_formatting:
+              type: string
+              description: Content-formatting preference.
+          additionalProperties: true
+        modifyFormat:
+          type: object
+          description: Optional top-level format overrides (legacy
+            placement).
+          additionalProperties: true
+      additionalProperties: true
+
+    TemplateConverterFinalprocessRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/template-converter/finalprocess`.
+      required: [fileIdentifier, fileName]
+      properties:
+        fileIdentifier:
+          type: string
+          description: Identifier shared across all chunks of this
+            upload.
+        fileName:
+          type: string
+          description: Final filename. Must end in `.pptx`.
+      additionalProperties: true
+
+    TemplateConverterReviewSuggestionsPatchRequest:
+      type: object
+      description: Request body for
+        `PATCH /api/v1/template-converter/{callback_id}/review-suggestions`.
+      required: [suggestions]
+      properties:
+        suggestions:
+          type: array
+          description: Suggestion patches to apply.
+          items:
+            type: object
+            additionalProperties: true
+      additionalProperties: true
+
+    TemplateConverterTemplateChangeRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/template-converter/{callback_id}/template-change`.
+      required: [templateName]
+      properties:
+        templateName:
+          type: string
+          description: New target brand template name.
+        settings:
+          type: object
+          description: Override conversion settings (same shape as
+            `TemplateConverterStartRequest.settings`).
+          additionalProperties: true
+      additionalProperties: true
+
+
+    TemplateConverterReactionFeedbackRequest:
+      type: object
+      description: Request body for
+        `PUT /api/v1/template-converter/reaction-feedback`.
+      required: [callback_id, type, value]
+      properties:
+        callback_id:
+          type: string
+          description: Converted-deck callback id.
+        type:
+          type: string
+          enum: [liked, feedback]
+          description: Reaction kind.
+        value:
+          description: When `type=liked`, a boolean. When
+            `type=feedback`, a string.
+          oneOf:
+            - type: boolean
+            - type: string
+      additionalProperties: true
+
+    TemplateConverterAdjustWorkAreaRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/template-converter/adjust-work-area`.
+      required: [callback_id, slide_index, selection]
+      properties:
+        callback_id:
+          type: string
+          description: Conversion job id.
+        slide_index:
+          type: integer
+          minimum: 0
+          description: Zero-based slide index.
+        selection:
+          type: object
+          description: Selected work-area-option payload.
+          additionalProperties: true
+      additionalProperties: true
+
+    TemplateConverterUpdateLayoutRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/template-converter/update-layout`.
+      required: [callback_id, slide_index, layout_id]
+      properties:
+        callback_id:
+          type: string
+          description: Conversion job id.
+        slide_index:
+          type: integer
+          minimum: 0
+          description: Zero-based slide index.
+        layout_id:
+          type: string
+          description: Target layout id (from
+            `/template-converter/layouts`).
+      additionalProperties: true
+
+    TemplateConverterModifyFormatRequest:
+      type: object
+      description: Request body for
+        `POST /api/v1/template-converter/modify-format`.
+      required: [callback_id, modify_format_config]
+      properties:
+        callback_id:
+          type: string
+          description: Conversion job id.
+        modify_format_config:
+          type: array
+          description: Per-slide formatting modifications.
+          items:
+            type: object
+            properties:
+              title:
+                type: object
+                description: Title-formatting modifications.
+                additionalProperties: true
+              body:
+                type: object
+                description: Body-formatting modifications.
+                additionalProperties: true
+            additionalProperties: true
+      additionalProperties: true
+
+    # ---- Template Converter: responses -----------------------------------
+    TemplateConverterStartResponse:
+      description: Response body for
+        `POST /api/v1/template-converter/start`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [callback_id]
+              properties:
+                callback_id:
+                  type: string
+                  description: Conversion job id.
+                token:
+                  type: string
+                  description: Token for callback-id-scoped URLs.
+                presentation_name:
+                  type: string
+                  description: Resolved presentation name.
+                status:
+                  type: string
+                  enum: [in_progress]
+                  description: Always `in_progress` at start.
+              additionalProperties: true
+
+    TemplateConverterStatusV2SuccessResponse:
+      description: |
+        Response body for
+        `GET /api/v2/template-converter/status/{callback_id}` when the
+        pipeline has completed successfully. Returned with HTTP 200.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [callback_id, status]
+              properties:
+                callback_id:
+                  type: string
+                  description: The polled callback id.
+                status:
+                  type: string
+                  enum: [success]
+                  description: Always `success` on HTTP 200.
+                presentation_name:
+                  type: string
+                  description: Final presentation name.
+                template_name:
+                  type: string
+                  description: Target template that was applied.
+                outputs:
+                  type: object
+                  description: Full conversion output blob. Only
+                    present when `source=nexus`.
+                  additionalProperties: true
+              additionalProperties: true
+
+    TemplateConverterStatusV2InProgressResponse:
+      description: |
+        Response body for
+        `GET /api/v2/template-converter/status/{callback_id}` when the
+        pipeline is still running. Returned with HTTP 202.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [callback_id, status]
+              properties:
+                callback_id:
+                  type: string
+                  description: The polled callback id.
+                status:
+                  type: string
+                  enum: [in_progress]
+                  description: Always `in_progress` on HTTP 202.
+                presentation_name:
+                  type: string
+                  description: Resolved presentation name.
+                template_name:
+                  type: string
+                  description: Target template being applied.
+                progress:
+                  type: object
+                  description: Optional progress metadata
+                    (stage/percentage).
+                  additionalProperties: true
+              additionalProperties: true
+
+    TemplateConverterAsyncProcessingResponse:
+      description: |
+        Response for endpoints that kick off a derived conversion
+        pipeline (update-layout, modify-format, template-change,
+        review-suggestions PATCH).
+      allOf:
+        - $ref: '#/components/schemas/CallbackEnvelope'
+
+    TemplateConverterReviewSuggestionsResponse:
+      description: Response body for
+        `GET /api/v1/template-converter/{callback_id}/review-suggestions`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [callback_id, suggestions]
+              properties:
+                callback_id:
+                  type: string
+                  description: The conversion job id.
+                presentation_name:
+                  type: string
+                  description: Presentation name.
+                suggestions:
+                  type: array
+                  description: Editorial suggestions.
+                  items:
+                    type: object
+                    additionalProperties: true
+              additionalProperties: true
+
+    TemplateConverterDownloadResponse:
+      description: Response body for
+        `GET /api/v1/template-converter/download/{callback_id}`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [download_url, file_name]
+              properties:
+                download_url:
+                  type: string
+                  format: uri
+                  description: Signed download URL.
+                file_name:
+                  type: string
+                  description: Filename of the converted deck.
+                message:
+                  type: string
+                  description: Human-readable confirmation.
+              additionalProperties: true
+
+    TemplateConverterFinalprocessResponse:
+      description: Response body for
+        `POST /api/v1/template-converter/finalprocess`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [file_id]
+              properties:
+                file_id:
+                  type: string
+                  description: Identifier of the assembled file (usable
+                    as `fileId` in `template-converter/start`).
+                s3_prefix:
+                  type: string
+                  description: S3 key prefix of the assembled file.
+                s3_bucket:
+                  type: string
+                  description: S3 bucket of the assembled file.
+                type:
+                  type: string
+                  description: Detected file type.
+                size_kb:
+                  type: integer
+                  description: File size in kilobytes.
+                num_of_pages:
+                  type: integer
+                  description: Number of pages/slides.
+              additionalProperties: true
+
+    TemplateConverterGenericResponse:
+      description: Generic success envelope for Template Converter
+        endpoints whose data is opaque or message-only (comply-metrics,
+        adjust-work-area).
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: Human-readable confirmation.
+              additionalProperties: true
+
+    TemplateConverterReactionFeedbackResponse:
+      description: Response body for
+        `PUT /api/v1/template-converter/reaction-feedback`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                callback_id:
+                  type: string
+                  description: The deck callback id.
+                type:
+                  type: string
+                  enum: [liked, feedback]
+                  description: Reaction kind.
+                message:
+                  type: string
+                  description: Human-readable confirmation.
+                warnings:
+                  type: array
+                  description: Optional non-fatal warnings.
+                  items: { type: string }
+              additionalProperties: true
+
+    TemplateConverterWorkAreaOptionsResponse:
+      description: Response body for
+        `GET /api/v1/template-converter/work-area-options`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [callback_id, work_area_adjustments]
+              properties:
+                callback_id:
+                  type: string
+                  description: The conversion job id.
+                work_area_adjustments:
+                  type: array
+                  description: Available work-area adjustments for the
+                    requested slide.
+                  items:
+                    type: object
+                    additionalProperties: true
+              additionalProperties: true
+
+    TemplateConverterLayoutsResponse:
+      description: Response body for
+        `GET /api/v1/template-converter/layouts`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [callback_id, status, layouts]
+              properties:
+                callback_id:
+                  type: string
+                  description: The conversion job id.
+                status:
+                  type: string
+                  enum: [success, in_progress, failed]
+                  description: Status of the layout-fetch step.
+                layouts:
+                  type: object
+                  description: Available layouts for the target template
+                    and input deck.
+                  properties:
+                    target_template_layouts:
+                      type: array
+                      description: Layouts from the target template.
+                      items:
+                        type: object
+                        additionalProperties: true
+                    input_deck_layouts:
+                      type: array
+                      description: Layouts inferred from the input deck.
+                      items:
+                        type: object
+                        additionalProperties: true
+                  additionalProperties: true
+              additionalProperties: true
+
+    TemplateConverterModifyFormatSettingsResponse:
+      description: Response body for
+        `GET /api/v1/template-converter/modify-format-settings`.
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [callback_id, modify_format_settings]
+              properties:
+                callback_id:
+                  type: string
+                  description: The conversion job id.
+                modify_format_settings:
+                  type: array
+                  description: Available formatting controls.
+                  items:
+                    type: object
+                    additionalProperties: true
+              additionalProperties: true
+
+    # ---- Webhooks --------------------------------------------------------
+    #
+    # Subscription-management plane. The HMAC secret is returned ONCE
+    # (on create + rotate) — reads only expose `secret_prefix`.
+    #
+    # The `WebhookEvent` schema below documents the SHAPE OF THE PAYLOAD
+    # we POST to subscribers' URLs. It is not the body of any
+    # request/response on these endpoints; it lives here so subscribers
+    # can codegen a parser.
+
+    WebhookEventType:
+      type: string
+      description: |
+        Catalog of event types emitted by Prezent. New types may be
+        added without notice; clients should ignore unknown values.
+      enum:
+        - autogeneration.completed
+        - autogeneration.failed
+        - template_conversion.completed
+        - template_conversion.failed
+        - webhook.test
+
+    WebhookSubscriptionStatus:
+      type: string
+      enum: [active, disabled]
+      description: |
+        `active` subscriptions receive deliveries. `disabled`
+        subscriptions are skipped at dispatch time — either explicitly
+        set by the customer or set by Prezent's auto-disable rule after
+        50 consecutive delivery failures. PATCH `status: active` to
+        re-enable.
+
+    WebhookSubscription:
+      type: object
+      description: |
+        Core read-shape for a webhook subscription. Returned by GET +
+        PATCH endpoints. Never includes the raw HMAC secret — only
+        `secret_prefix` (the first 6 chars, for human disambiguation).
+      required: [id, url, secret_prefix, events, status, created_at, updated_at]
+      properties:
+        id:
+          type: string
+          pattern: '^whsub_[a-f0-9]{32}$'
+          example: whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c
+        url:
+          type: string
+          format: uri
+          description: HTTPS endpoint receiving signed deliveries.
+          example: https://hooks.example.com/prezent
+        secret_prefix:
+          type: string
+          description: First 6 characters of the HMAC secret, for human
+            disambiguation. Always `whsec_` for current implementations.
+          example: whsec_
+        events:
+          type: array
+          description: |
+            Event types this subscription receives. Use `["*"]` to
+            subscribe to everything, including future event types.
+          items: { $ref: '#/components/schemas/WebhookEventType' }
+          minItems: 1
+          example: [autogeneration.completed, autogeneration.failed]
+        description:
+          type: string
+          nullable: true
+          description: Free-form human label for the subscription.
+          example: Push completions into our deal-room worker.
+        status:
+          $ref: '#/components/schemas/WebhookSubscriptionStatus'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        last_delivery_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the most recent successful delivery.
+        last_failure_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the most recent failed delivery.
+        consecutive_failure_count:
+          type: integer
+          format: int32
+          minimum: 0
+          description: |
+            Failures since the last successful delivery. At 50 the
+            subscription is auto-disabled.
+      additionalProperties: true
+
+    # ----- Streaming -------------------------------------------------
+    StreamSessionCreateRequest:
+      type: object
+      required: [callback_id]
+      properties:
+        callback_id:
+          type: string
+          description: |
+            The `callback_id` returned by your earlier call to
+            `POST /api/v1/autogenerations` (or other async endpoint).
+            The calling API key must own this job.
+          example: cb_01HZQ3Y7K3D6V0A0CS7HD3
+
+    StreamSessionCreateResponse:
+      type: object
+      required: [success, data]
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required: [session_id, stream_url, expires_at]
+          properties:
+            session_id:
+              type: string
+              description: Same as the `callback_id` you passed in.
+              example: cb_01HZQ3Y7K3D6V0A0CS7HD3
+            stream_url:
+              type: string
+              format: uri
+              description: |
+                Open with `new EventSource(stream_url)` (or `fetch`
+                + ReadableStream). Hostname is environment-dependent
+                (e.g. `stream-api.myprezent.com`). The embedded token
+                expires at `expires_at`.
+              example: https://stream-api.myprezent.com/v1/streams/cb_01HZQ3Y7K3D6V0A0CS7HD3?token=eyJhbGciOi...
+            expires_at:
+              type: string
+              format: date-time
+              description: When the embedded token stops being accepted.
+                Call this endpoint again to refresh.
+              example: '2026-06-09T10:05:00Z'
+
+    # ----- Webhooks --------------------------------------------------
+    WebhookSubscriptionCreateRequest:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+          description: |
+            HTTPS endpoint to receive deliveries. Must use `https://`,
+            resolve to a public IP, and not use a disallowed port. See
+            the [Webhooks guide](/docs/webhooks#url-requirements).
+          example: https://hooks.example.com/prezent
+        events:
+          type: array
+          description: Event types to subscribe to. Defaults to `["*"]`.
+          items: { $ref: '#/components/schemas/WebhookEventType' }
+          default: ["*"]
+          example: [autogeneration.completed, autogeneration.failed]
+        description:
+          type: string
+          nullable: true
+          example: Push completions into our deal-room worker.
+        status:
+          $ref: '#/components/schemas/WebhookSubscriptionStatus'
+      additionalProperties: false
+
+    WebhookSubscriptionUpdateRequest:
+      type: object
+      description: Partial update. Any combination of fields may be supplied.
+      properties:
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items: { $ref: '#/components/schemas/WebhookEventType' }
+          minItems: 1
+        description:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/WebhookSubscriptionStatus'
+      additionalProperties: false
+
+    WebhookSubscriptionCreateResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              allOf:
+                - $ref: '#/components/schemas/WebhookSubscription'
+                - type: object
+                  required: [secret]
+                  properties:
+                    secret:
+                      type: string
+                      description: |
+                        The raw HMAC secret. Returned ONCE on this
+                        endpoint and on `/rotate-secret`. Store it
+                        immediately — subsequent reads expose only
+                        `secret_prefix`.
+                      example: whsec_4mZkV8t9oFp1qR3sT7uW9xY2zA5bCdEfGhI
+
+    WebhookSubscriptionReadResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/WebhookSubscription'
+
+    WebhookSubscriptionListResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [items]
+              properties:
+                items:
+                  type: array
+                  items: { $ref: '#/components/schemas/WebhookSubscription' }
+                next_cursor:
+                  type: string
+                  nullable: true
+                  description: Pass to the next call's `cursor` query
+                    param. `null` when no more pages.
+
+    WebhookSubscriptionDeleteResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [id, deleted]
+              properties:
+                id:
+                  type: string
+                  example: whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c
+                deleted:
+                  type: boolean
+                  const: true
+
+    WebhookSubscriptionRotateResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [id, secret, secret_prefix, rotated_at]
+              properties:
+                id:
+                  type: string
+                  example: whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c
+                secret:
+                  type: string
+                  description: The freshly-issued HMAC secret. Stored
+                    nowhere by Prezent after this response — capture it
+                    before forwarding.
+                  example: whsec_NewlyGeneratedSecretMaterial
+                secret_prefix:
+                  type: string
+                  example: whsec_
+                rotated_at:
+                  type: string
+                  format: date-time
+
+    WebhookSubscriptionTestResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessEnvelope'
+        - type: object
+          properties:
+            data:
+              type: object
+              required: [subscription_id, event, delivery]
+              properties:
+                subscription_id:
+                  type: string
+                  example: whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c
+                event:
+                  $ref: '#/components/schemas/WebhookEvent'
+                delivery:
+                  type: object
+                  required: [ok, status, delivery_id]
+                  properties:
+                    ok:
+                      type: boolean
+                      description: True if the receiver returned a 2xx.
+                    status:
+                      type: integer
+                      description: HTTP status code from the receiver
+                        (0 on network error / timeout).
+                      example: 200
+                    error:
+                      type: string
+                      nullable: true
+                      description: Network error code (`timeout`,
+                        `ECONNREFUSED`, etc.). `null` on success.
+                    response_body_preview:
+                      type: string
+                      description: First 8 KiB of the receiver's response
+                        body, for debugging.
+                    delivery_id:
+                      type: string
+                      pattern: '^whdl_[a-f0-9]{24}$'
+                      description: Internal delivery id. Also sent to the
+                        receiver in the `X-Prezent-Delivery` header.
+
+    WebhookEvent:
+      type: object
+      description: |
+        Payload **POSTed to your subscription URL**. This is NOT the
+        body of any management endpoint — it is what your receiver
+        parses. Verify the signature first; see the [Webhooks
+        guide](/docs/webhooks#4-verify-the-signature).
+      required: [id, type, api_version, created_at, data]
+      properties:
+        id:
+          type: string
+          pattern: '^evt_[a-zA-Z0-9_]+$'
+          description: Globally unique event identifier. Also sent in
+            the `X-Prezent-Event` header. Dedupe on this if you receive
+            the same event twice (at-least-once delivery).
+          example: evt_8c2a1f7e6d3b4a5c9e0f8d7b6a5c4d3e
+        type:
+          $ref: '#/components/schemas/WebhookEventType'
+        api_version:
+          type: string
+          description: Schema version for the `data` field. Increments
+            only on breaking changes; legacy versions remain available.
+          example: "1.0"
+        created_at:
+          type: string
+          format: date-time
+        data:
+          type: object
+          description: |
+            Event-specific payload. For `autogeneration.*` events,
+            contains `callback_id`, `report_id`, `status`, plus
+            `outputs` (on success) or `error_log` (on failure). For
+            `template_conversion.*` events, contains the conversion
+            `callback_id`, `status`, and output URLs.
+          additionalProperties: true
+
+  responses:
+    BadRequest:
+      description: Generic client error. `error.code` is one of
+        `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`,
+        `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`,
+        `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`,
+        `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`,
+        `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`,
+        `INVALID_REQUEST`, `API_REQUEST_FAILED`, or
+        `FILE_UPLOAD_FAILED`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: BAD_REQUEST
+              message: Bad request.
+              details: {}
+
+    Unauthorized:
+      description: |
+        Caller did not present a valid Bearer token, or the token has
+        expired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,
+        `EXPIRED_API_KEY`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: INVALID_API_KEY
+              message: API key not found or not authorized.
+              details: {}
+
+    Forbidden:
+      description: Caller is authenticated but not allowed to perform
+        this operation. `error.code` is `FORBIDDEN`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: FORBIDDEN
+              message: Access to the resource is forbidden.
+              details: {}
+
+    NotFound:
+      description: |
+        Requested endpoint or resource does not exist. `error.code` is
+        one of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: RESOURCE_NOT_FOUND
+              message: The requested resource was not found.
+              details: {}
+
+    MethodNotAllowed:
+      description: HTTP method not allowed for this endpoint.
+        `error.code` is `METHOD_NOT_ALLOWED`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: METHOD_NOT_ALLOWED
+              message: HTTP method not allowed.
+              details: {}
+
+    UnsupportedFileType:
+      description: Uploaded file's extension or MIME type is not
+        accepted. `error.code` is `UNSUPPORTED_FILE_TYPE`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: UNSUPPORTED_FILE_TYPE
+              message: Unsupported file type.
+              details: {}
+
+    UnprocessableEntity:
+      description: |
+        Request was well-formed but failed semantic validation.
+        `error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: INVALID_INPUT
+              message: Invalid input provided.
+              details: {}
+
+    IdempotencyConflict:
+      description: |
+        The supplied `Idempotency-Key` was already used with a different
+        request body. Reuse a key only for identical retried requests.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: IDEMPOTENCY_KEY_REUSED_WITH_DIFFERENT_BODY
+              message: This Idempotency-Key was already used with a different request body.
+              details: {}
+
+    RateLimited:
+      description: |
+        Rate limit, usage limit, or gateway-level throttle exceeded.
+        `error.code` is `TOO_MANY_REQUESTS` (gateway throttle),
+        `RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`
+        (annual quota).
+
+        Default limits (all configurable per company/key):
+        - Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second
+          sustained, 5 burst, 1,000 requests/day.
+        - Per-company, per-category sliding 60-second window →
+          `RATE_LIMIT_EXCEEDED`. The applicable category is given by each
+          operation's `x-rate-limit-category`.
+        - Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide
+          generations/year and 1,000,000 presentation downloads/year.
+
+        `X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are
+        returned on successful (2xx) responses from rate-limited endpoints
+        and, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`
+        429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`
+        and annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read
+        `X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on
+        a 429.
+      headers:
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/XRateLimitLimit'
+        X-RateLimit-Remaining:
+          $ref: '#/components/headers/XRateLimitRemaining'
+        X-RateLimit-Reset:
+          $ref: '#/components/headers/XRateLimitReset'
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: RATE_LIMIT_EXCEEDED
+              message: Rate limit exceeded for this category. Try again later.
+              details:
+                category: auto_generator
+                retry_after_seconds: 12
+
+    InternalServerError:
+      description: Unexpected server error. `error.code` is
+        `INTERNAL_SERVER_ERROR`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: INTERNAL_SERVER_ERROR
+              message: An unexpected server error occurred.
+              details: {}
+
+    ServiceUnavailable:
+      description: Service is temporarily unavailable (downstream
+        dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or
+        `EXTERNAL_SERVICE_ERROR`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: SERVICE_UNAVAILABLE
+              message: Service is temporarily unavailable.
+              details: {}
+
+    GatewayTimeout:
+      description: A downstream call timed out. `error.code` is
+        `GATEWAY_TIMEOUT`.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+          example:
+            success: false
+            data: null
+            error:
+              code: GATEWAY_TIMEOUT
+              message: Gateway timeout.
+              details: {}

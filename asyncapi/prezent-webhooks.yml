@@ -1,0 +1,28 @@
+generated: '2026-07-20'
+method: derived
+source: openapi/prezent-openapi-original.yml (Webhooks tag + WebhookEventType + webhook-subscriptions endpoints)
+spec_type: Webhooks
+notes: >
+  Prezent documents a first-class webhook subscription surface (no standalone AsyncAPI document
+  published). Subscriptions are managed via REST; each delivery is signed and the signing secret
+  is rotatable. Completion of async AutoGenerator and Template Converter jobs is delivered as events.
+management:
+  create: POST /api/v1/webhook-subscriptions
+  list: GET /api/v1/webhook-subscriptions
+  read: GET /api/v1/webhook-subscriptions/{id}
+  update: PATCH /api/v1/webhook-subscriptions/{id}
+  delete: DELETE /api/v1/webhook-subscriptions/{id}
+  rotate_secret: POST /api/v1/webhook-subscriptions/{id}/rotate-secret
+  test: POST /api/v1/webhook-subscriptions/{id}/test
+subscription_status: [active, disabled]
+events:
+  - type: autogeneration.completed
+    description: An AutoGenerator presentation build finished successfully.
+  - type: autogeneration.failed
+    description: An AutoGenerator presentation build failed.
+  - type: template_conversion.completed
+    description: A Template Converter job finished successfully.
+  - type: template_conversion.failed
+    description: A Template Converter job failed.
+  - type: webhook.test
+    description: Test event emitted by the subscription test endpoint.

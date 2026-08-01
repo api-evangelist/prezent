@@ -1,0 +1,777 @@
+{
+  "info": {
+    "_postman_id": "97637c0a-a7ed-462b-956a-a8523acc0f96",
+    "name": "Prezent Platform Audiences Health API",
+    "description": "The Prezent Platform API exposes Prezent's AutoGenerator, Template Converter,\nAudiences, Themes, and File-upload services as a uniform JSON HTTP API.\n\nThis contract describes the **target agent-ready shape** of the API: every\ndocumented endpoint returns a uniform success envelope `{ \"success\": true,\n\"data\": { ... } }` or a uniform error envelope `{ \"success\": false,\n\"data\": null, \"error\": { \"code\": \"...\", \"message\": \"...\", \"details\": { ... } } }`.\nError codes are drawn from a stable catalog (see `ErrorCode`). The contract\nis additive: handlers may continue to emit legacy keys alongside the\ndocumented ones for backwards compatibility, so schemas explicitly allow\nadditional properties at the envelope and data levels.\n\nSeveral endpoints kick off long-running background work and return a\n`callback_id` that the client polls against a corresponding status\nendpoint. The canonical async polling endpoint for the Template Converter\nfamily is **`GET /api/v2/template-converter/status/{callback_id}`** which\nuses strict HTTP-status mapping (200 only on workflow success, 4xx/5xx on\nworkflow failure). The v1 polling endpoint at\n`/api/v1/template-converter/status/{callbackId}` (and its REST alias\n`GET /api/v1/template-conversions/{callback_id}`) continues to be served\nwith legacy semantics (HTTP 200 with `status` field) and is intentionally\nomitted from this documentation.\n\n**REST resource aliases (v1.1).** AutoGenerator and Template Converter\nendpoints are documented here under their REST-resource path names\n(`/api/v1/autogenerations`, `/api/v1/template-conversions`). The legacy\nRPC-style paths under `/api/v1/autogenerator/*` and\n`/api/v1/template-converter/*` continue to be served indefinitely; they\nreturn a `Deprecation: true` header pointing to the successor alias.\n\n**Conventions that apply to every endpoint** (full reference in the\ncompanion guides on this documentation site):\n\n- **Auth:** API key as a Bearer token \u2014 `Authorization: Bearer <key>`.\n  Each key is scoped to an allow-list of endpoint paths; an out-of-scope\n  call returns `404 ENDPOINT_NOT_FOUND`.\n- **Rate limits:** gateway throttle 10 req/s sustained, 5 burst,\n  1,000 req/day per key; per-company per-category 60-second sliding\n  windows; annual quotas (50,000 slide generations/yr, 1,000,000\n  downloads/yr). Limit breaches return `429` with `error.code`\n  `TOO_MANY_REQUESTS` (gateway), `RATE_LIMIT_EXCEEDED` (per-category),\n  or `USAGE_LIMIT_EXCEEDED` (annual).\n- **Errors:** every error uses the `{ success:false, data:null, error:{\n  code, message, details } }` envelope with stable, documented `code`\n  values.\n- **Idempotency & pagination:** mutating requests accept an\n  `Idempotency-Key`; list endpoints accept opt-in `limit`/`cursor`\n  paging.\n\n**Building with an AI agent?** Prezent ships a first-class Model Context\nProtocol (MCP) server. The hosted endpoint is\n`https://mcp.myprezent.com/mcp` (OAuth 2.1, works with Claude.ai Custom\nConnectors); a local stdio server is published on PyPI as\n`prezent-mcp-server` and plugs into Claude Desktop, Cursor, Cline,\nContinue, and Zed. The MCP tools wrap the same REST endpoints\ndescribed here.\n\n**Official SDKs.** Typed REST clients are published for Python and\nTypeScript (`prezent-sdk`) \u2014 generated from and versioned against this\nspec. For other languages, generate a client from this document.\n\n**Out of scope of this document:** SCIM endpoints under `/api/v1/scim/*`.\nThose endpoints conform to RFC 7644 (SCIM 2.0) and follow a different\nenvelope (`schemas`, `Resources`, `totalResults`, etc.). They are\ndocumented separately at /docs/scim-user-management.\n\n\nContact Support:\n Name: Prezent API Support\n Email: support@prezent.ai",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "createdAt": "2026-07-28T02:40:31.000Z",
+    "updatedAt": "2026-07-28T02:40:31.000Z",
+    "lastUpdatedBy": "35240",
+    "uid": "35240-97637c0a-a7ed-462b-956a-a8523acc0f96"
+  },
+  "item": [
+    {
+      "name": "test",
+      "item": [
+        {
+          "name": "Liveness check",
+          "id": "97d14d50-0f6c-4e12-b25f-59376884a291",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "test"
+              ]
+            },
+            "description": "Returns a fixed greeting payload. Exists to allow clients to verify\nconnectivity and credentials. Does not consult any downstream\nservices.\n"
+          },
+          "response": [
+            {
+              "id": "ee814d46-1a25-4c5a-a804-dde20e3eb6f3",
+              "name": "API is reachable.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/test",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "test"
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"data\": {\n    \"message\": \"<string>\"\n  },\n  \"success\": \"<boolean>\"\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-ee814d46-1a25-4c5a-a804-dde20e3eb6f3"
+            },
+            {
+              "id": "41473982-7a7c-4f3d-9170-a70cac9704b1",
+              "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/test",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "test"
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MAX_RETRIES_EXCEEDED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"eu_cb4\": -86140778.92684677\n    }\n  }\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-41473982-7a7c-4f3d-9170-a70cac9704b1"
+            },
+            {
+              "id": "d6baff6a-a43a-4ddb-b126-4858f125a8d6",
+              "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/test",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "test"
+                  ]
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MAX_RETRIES_EXCEEDED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"eu_cb4\": -86140778.92684677\n    }\n  }\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-d6baff6a-a43a-4ddb-b126-4858f125a8d6"
+            },
+            {
+              "id": "f5945a95-aab1-4829-a028-8c5dcf74bf59",
+              "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gate",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/test",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "test"
+                  ]
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "X-RateLimit-Limit",
+                  "value": ""
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "X-RateLimit-Remaining",
+                  "value": ""
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "X-RateLimit-Reset",
+                  "value": ""
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Retry-After",
+                  "value": ""
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MAX_RETRIES_EXCEEDED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"eu_cb4\": -86140778.92684677\n    }\n  }\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-f5945a95-aab1-4829-a028-8c5dcf74bf59"
+            },
+            {
+              "id": "b417b466-3d65-42e2-8995-651169619503",
+              "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/test",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "test"
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MAX_RETRIES_EXCEEDED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"eu_cb4\": -86140778.92684677\n    }\n  }\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-b417b466-3d65-42e2-8995-651169619503"
+            },
+            {
+              "id": "81038aa0-b629-4f2c-9a4b-e89aa3fe91a5",
+              "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/test",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "test"
+                  ]
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MAX_RETRIES_EXCEEDED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"eu_cb4\": -86140778.92684677\n    }\n  }\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-81038aa0-b629-4f2c-9a4b-e89aa3fe91a5"
+            },
+            {
+              "id": "63ecf70c-aeb5-4066-83f8-7ba19eff47cd",
+              "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/test",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "test"
+                  ]
+                }
+              },
+              "status": "Gateway Timeout",
+              "code": 504,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MAX_RETRIES_EXCEEDED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"eu_cb4\": -86140778.92684677\n    }\n  }\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-63ecf70c-aeb5-4066-83f8-7ba19eff47cd"
+            }
+          ],
+          "createdAt": "2026-07-28T02:40:32.000Z",
+          "updatedAt": "2026-07-28T02:40:32.000Z",
+          "uid": "35240-97d14d50-0f6c-4e12-b25f-59376884a291"
+        }
+      ],
+      "id": "a7b683b5-066e-4880-be8b-26079ccc2ace",
+      "createdAt": "2026-07-28T02:40:31.000Z",
+      "updatedAt": "2026-07-28T02:40:31.000Z",
+      "uid": "35240-a7b683b5-066e-4880-be8b-26079ccc2ace"
+    },
+    {
+      "name": "health",
+      "item": [
+        {
+          "name": "Component health check",
+          "id": "f8a4cb23-893b-4cbf-9809-536215740417",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health?category=scim",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ],
+              "query": [
+                {
+                  "description": "Component group to check. Omit for a generic liveness response.",
+                  "key": "category",
+                  "value": "scim"
+                }
+              ]
+            },
+            "description": "Reports the status of downstream services. With no `category`\nparameter, returns a simple \"alive\" greeting. With\n`category=autogenerator` or `category=scim`, reports\nper-component status and returns 503 if any required service is\nunhealthy.\n"
+          },
+          "response": [
+            {
+              "id": "ce7886c6-d16e-4a6f-a81b-f30ceb796835",
+              "name": "All checked components healthy.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/health?category=scim",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health"
+                  ],
+                  "query": [
+                    {
+                      "description": "Component group to check. Omit for a generic liveness response.",
+                      "key": "category",
+                      "value": "scim"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"message\": \"<string>\",\n  \"status\": \"<string>\",\n  \"data\": {\n    \"message\": \"<string>\",\n    \"category\": \"<string>\",\n    \"services\": [\n      {\n        \"name\": \"<string>\",\n        \"status\": \"<string>\",\n        \"detail\": \"<string>\"\n      },\n      {\n        \"name\": \"<string>\",\n        \"status\": \"<string>\",\n        \"detail\": \"<string>\",\n        \"commodob7d\": \"qui labore in\"\n      }\n    ],\n    \"timestamp\": \"<dateTime>\"\n  },\n  \"ut_f2\": \"laborum cillum\",\n  \"consecteturdb_\": 54467923.50616786,\n  \"mollit84\": -26591259.159253597\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-ce7886c6-d16e-4a6f-a81b-f30ceb796835"
+            },
+            {
+              "id": "b6c6b3a4-8eb2-4470-827c-c607f7a34b82",
+              "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/health?category=scim",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health"
+                  ],
+                  "query": [
+                    {
+                      "description": "Component group to check. Omit for a generic liveness response.",
+                      "key": "category",
+                      "value": "scim"
+                    }
+                  ]
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MAX_RETRIES_EXCEEDED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"eu_cb4\": -86140778.92684677\n    }\n  }\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-b6c6b3a4-8eb2-4470-827c-c607f7a34b82"
+            },
+            {
+              "id": "eace0645-925e-45ab-a7c4-093e6ff088f7",
+              "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gate",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/health?category=scim",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health"
+                  ],
+                  "query": [
+                    {
+                      "description": "Component group to check. Omit for a generic liveness response.",
+                      "key": "category",
+                      "value": "scim"
+                    }
+                  ]
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "X-RateLimit-Limit",
+                  "value": ""
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "X-RateLimit-Remaining",
+                  "value": ""
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "X-RateLimit-Reset",
+                  "value": ""
+                },
+                {
+                  "disabled": false,
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "key": "Retry-After",
+                  "value": ""
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MAX_RETRIES_EXCEEDED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"eu_cb4\": -86140778.92684677\n    }\n  }\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-eace0645-925e-45ab-a7c4-093e6ff088f7"
+            },
+            {
+              "id": "cf8daee6-c3a2-4e2d-aa6d-e6bf3983093d",
+              "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/health?category=scim",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health"
+                  ],
+                  "query": [
+                    {
+                      "description": "Component group to check. Omit for a generic liveness response.",
+                      "key": "category",
+                      "value": "scim"
+                    }
+                  ]
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MAX_RETRIES_EXCEEDED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"eu_cb4\": -86140778.92684677\n    }\n  }\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-cf8daee6-c3a2-4e2d-aa6d-e6bf3983093d"
+            },
+            {
+              "id": "36660803-fa6d-432c-80c3-80b2fec96591",
+              "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/health?category=scim",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health"
+                  ],
+                  "query": [
+                    {
+                      "description": "Component group to check. Omit for a generic liveness response.",
+                      "key": "category",
+                      "value": "scim"
+                    }
+                  ]
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MAX_RETRIES_EXCEEDED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"eu_cb4\": -86140778.92684677\n    }\n  }\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-36660803-fa6d-432c-80c3-80b2fec96591"
+            },
+            {
+              "id": "f9730da4-508c-4f21-a331-673a5e6d8a1a",
+              "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "description": "Added as a part of security scheme: bearer",
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/health?category=scim",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "health"
+                  ],
+                  "query": [
+                    {
+                      "description": "Component group to check. Omit for a generic liveness response.",
+                      "key": "category",
+                      "value": "scim"
+                    }
+                  ]
+                }
+              },
+              "status": "Gateway Timeout",
+              "code": 504,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "responseTime": null,
+              "body": "{\n  \"success\": \"<boolean>\",\n  \"data\": {},\n  \"error\": {\n    \"code\": \"MAX_RETRIES_EXCEEDED\",\n    \"message\": \"<string>\",\n    \"details\": {\n      \"eu_cb4\": -86140778.92684677\n    }\n  }\n}",
+              "createdAt": "2026-07-28T02:40:32.000Z",
+              "updatedAt": "2026-07-28T02:40:32.000Z",
+              "uid": "35240-f9730da4-508c-4f21-a331-673a5e6d8a1a"
+            }
+          ],
+          "createdAt": "2026-07-28T02:40:32.000Z",
+          "updatedAt": "2026-07-28T02:40:32.000Z",
+          "uid": "35240-f8a4cb23-893b-4cbf-9809-536215740417"
+        }
+      ],
+      "id": "5e7564d6-1c3f-46ec-8fdc-cf6e0505457f",
+      "createdAt": "2026-07-28T02:40:31.000Z",
+      "updatedAt": "2026-07-28T02:40:31.000Z",
+      "uid": "35240-5e7564d6-1c3f-46ec-8fdc-cf6e0505457f"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.prezent.ai"
+    }
+  ]
+}

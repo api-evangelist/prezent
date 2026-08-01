@@ -1,0 +1,20 @@
+generated: '2026-07-20'
+method: derived
+source: openapi/prezent-openapi-original.yml
+summary:
+  types:
+  - http
+schemes:
+- name: BearerAuth
+  type: http
+  scheme: bearer
+  bearerFormat: opaque
+  description: |-
+    Bearer token authentication. Supply the API key issued by
+    Customer Success as `Authorization: Bearer <api_key>`. The API
+    does NOT accept the AWS `x-api-key` header. Keys may have an
+    expiry date; expired keys return `401 EXPIRED_API_KEY`. Keys are
+    scoped to specific paths; calling an unauthorised path returns
+    `404 ENDPOINT_NOT_FOUND`.
+  sources:
+  - openapi/prezent-openapi-original.yml

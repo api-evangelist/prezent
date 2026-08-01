@@ -1,0 +1,21 @@
+generated: '2026-07-20'
+method: searched
+source: openapi/prezent-openapi-original.yml (servers) ; https://docs.prezent.ai/
+environments:
+  - name: Production
+    base_url: https://api.prezent.ai
+    canonical: true
+  - name: UAT
+    base_url: https://uatstage-api.myprezent.com
+    purpose: user acceptance testing (non-production)
+  - name: Development
+    base_url: https://devstage-api.myprezent.com
+    purpose: development / integration testing (non-production)
+health_check: GET /health
+webhook_test: POST /api/v1/webhook-subscriptions/{id}/test    # emits a webhook.test event
+notes: >
+  Prezent publishes distinct UAT and Development API hosts alongside production, and a
+  webhook subscription `test` endpoint that emits a webhook.test event for wiring up
+  integrations. No public test-key prefixes or magic test values are documented; API keys
+  are issued per environment by Customer Success. Nothing here is fabricated — values are
+  taken verbatim from the OpenAPI servers list and the webhook test operation.

@@ -1,0 +1,25 @@
+generated: '2026-07-20'
+method: searched
+source: openapi/prezent-openapi-original.yml (info.description) ; https://docs.prezent.ai/
+signal_headers: [X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After]
+limits:
+  - scope: gateway (per key)
+    limit_count: 10
+    window: 1s
+    detail: 10 req/s sustained, 5 burst
+    breach_code: TOO_MANY_REQUESTS
+  - scope: gateway daily (per key)
+    limit_count: 1000
+    window: 1d
+    breach_code: TOO_MANY_REQUESTS
+  - scope: per-company per-category
+    window: 60s sliding
+    breach_code: RATE_LIMIT_EXCEEDED
+  - scope: annual quota (slide generations)
+    limit_count: 50000
+    window: 1y
+    breach_code: USAGE_LIMIT_EXCEEDED
+  - scope: annual quota (downloads)
+    limit_count: 1000000
+    window: 1y
+    breach_code: USAGE_LIMIT_EXCEEDED
