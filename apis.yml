@@ -218,7 +218,7 @@ common:
 - type: Integrations
   url: https://prezent.ai/integrations
 - type: OpenAPI
-  url: openapi/prezent-openapi-original.yml
+  url: openapi/_original/prezent-openapi-original.yml
 - type: MCPServer
   url: mcp/prezent-mcp.yml
 - type: Packages
