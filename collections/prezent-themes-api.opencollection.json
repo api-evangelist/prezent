@@ -1,0 +1,134 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Prezent Platform Audiences Themes API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Themes",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List templates available to a feature",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v1/templates",
+            "params": [
+              {
+                "name": "feature",
+                "value": "",
+                "type": "query",
+                "description": "Filter to templates enabled for a specific feature."
+              },
+              {
+                "name": "name",
+                "value": "",
+                "type": "query",
+                "description": "Optional case-insensitive name filter."
+              },
+              {
+                "name": "sort",
+                "value": "",
+                "type": "query",
+                "description": "Sort expression (for example `name:asc`)."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Items per page (1–200, default 50). Enables pagination."
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque cursor from a previous response's `next_cursor`."
+              },
+              {
+                "name": "source",
+                "value": "",
+                "type": "query",
+                "description": "Source filter (e.g. brand vs prezent)."
+              },
+              {
+                "name": "enabledFeature",
+                "value": "",
+                "type": "query",
+                "description": "Optional feature flag filter."
+              }
+            ]
+          },
+          "docs": "Returns the themes/templates available to the caller's company,\noptionally filtered to a specific feature. This single endpoint\nreplaces the legacy `GET /api/v1/autogenerator/templates` and\n`GET /api/v1/template-converter/templates` aliases — pass the\n`feature` query parameter to scope results.\n\n**Pagination is opt-in.** Send `limit` (and follow `next_cursor`)\nto page; omit both `limit` and `cursor` to receive the full list\nunchanged.\n"
+        },
+        {
+          "info": {
+            "name": "List themes (brand templates)",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v1/themes",
+            "params": [
+              {
+                "name": "name",
+                "value": "",
+                "type": "query",
+                "description": "Optional case-insensitive name filter."
+              },
+              {
+                "name": "feature",
+                "value": "",
+                "type": "query",
+                "description": "Filter by feature scope."
+              },
+              {
+                "name": "enabledFeature",
+                "value": "",
+                "type": "query",
+                "description": "Optional feature flag filter."
+              },
+              {
+                "name": "sort",
+                "value": "",
+                "type": "query",
+                "description": "Sort expression (for example `name:asc`)."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Max items per page (1–200, default 50). Sending this enables cursor pagination."
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque cursor from a previous response's `next_cursor`."
+              },
+              {
+                "name": "source",
+                "value": "",
+                "type": "query",
+                "description": "Source filter."
+              }
+            ]
+          },
+          "docs": "Returns the presentation themes available to the caller's company.\n\n**Pagination is opt-in.** Send `limit` (and follow `next_cursor`)\nto page; omit both `limit` and `cursor` to receive the full list\nunchanged.\n"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

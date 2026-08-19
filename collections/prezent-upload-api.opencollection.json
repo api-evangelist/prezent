@@ -1,0 +1,69 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Prezent Platform Audiences Upload API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Upload",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Upload a single file (base64-encoded)",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/upload",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Accepts a single file as a base64 string or `data:` URL in the\nrequest body. The response contains the uploaded file's id, S3\npath, and metadata.\n"
+        },
+        {
+          "info": {
+            "name": "Preprocess a file in chunks",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/preprocess",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Accepts one chunk of a multi-chunk file upload. The caller drives\nchunking via `chunkIndex` and `totalChunks`; chunks for the same\nupload share a `requestIdentifier`. Once all chunks for a\n`requestIdentifier` have arrived the file is assembled and made\navailable to downstream operations.\n"
+        },
+        {
+          "info": {
+            "name": "Validate uploaded files and/or web links",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/validate",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Validates a set of previously uploaded files (referenced by\n`fileIdentifiers`) and/or a list of web links. At least one of\n`fileIdentifiers` or `webLinks` must be non-empty.\n"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

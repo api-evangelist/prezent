@@ -1,0 +1,645 @@
+{
+  "item": [
+    {
+      "id": "ffcddd23-0ba2-41b8-9b65-204bddc83cf5",
+      "name": "File Access",
+      "description": {
+        "content": "Mint short-lived access tokens for the caller's stored files.",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "bc674c94-b617-4b98-9587-c7bb4a317ad8",
+          "name": "Create signed access tokens for stored files",
+          "request": {
+            "name": "Create signed access tokens for stored files",
+            "description": {
+              "content": "Returns short-lived per-file access tokens that allow the caller\nto download the referenced files from the underlying storage\nbackend.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "access-tokens"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"filePaths\": [\n    \"<string>\"\n  ],\n  \"source\": \"<string>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "bfe91085-b76b-4d66-afb9-6d11b9973267",
+              "name": "Tokens minted.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "access-tokens"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"filePaths\": [\n    \"<string>\"\n  ],\n  \"source\": \"<string>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"access_tokens\": {\n      \"key_0\": \"string\"\n    },\n    \"message\": \"string\"\n  },\n  \"success\": false\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d8ce0e82-a8a8-4062-9c7a-15d678c89fdb",
+              "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "access-tokens"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"filePaths\": [\n    \"<string>\"\n  ],\n  \"source\": \"<string>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"BAD_REQUEST\",\n    \"message\": \"Bad request.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "4aefa44e-fbf0-432d-b602-7ee6a0bee294",
+              "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "access-tokens"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"filePaths\": [\n    \"<string>\"\n  ],\n  \"source\": \"<string>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INVALID_API_KEY\",\n    \"message\": \"API key not found or not authorized.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "40bcc5c2-939b-42d6-9959-9b5f6326ea88",
+              "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "access-tokens"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"filePaths\": [\n    \"<string>\"\n  ],\n  \"source\": \"<string>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"Access to the resource is forbidden.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "baab8e97-64ad-410f-83a8-2e17f50c49af",
+              "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "access-tokens"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"filePaths\": [\n    \"<string>\"\n  ],\n  \"source\": \"<string>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RESOURCE_NOT_FOUND\",\n    \"message\": \"The requested resource was not found.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "c430ada5-f70b-45e8-b35d-f5c0c1a862c9",
+              "name": "Request was well-formed but failed semantic validation.\n`error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "access-tokens"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"filePaths\": [\n    \"<string>\"\n  ],\n  \"source\": \"<string>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INVALID_INPUT\",\n    \"message\": \"Invalid input provided.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "971812ad-8018-4381-9d7d-b81a9dd368a0",
+              "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "access-tokens"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"filePaths\": [\n    \"<string>\"\n  ],\n  \"source\": \"<string>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "The configured request limit for the rate-limit category\n(requests per 60-second window) that applied to this call.\nThe applicable category is the operation's `x-rate-limit-category`.\nReturned on every response (success and 429) so clients can\nself-throttle. See the Rate limits guide for the default\nper-category numbers.\n",
+                  "key": "X-RateLimit-Limit",
+                  "value": "6689"
+                },
+                {
+                  "disabled": false,
+                  "description": "Approximate number of requests remaining in the current\n60-second window for this caller and category.\n",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "6689"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (seconds) when the current rate-limit window resets.",
+                  "key": "X-RateLimit-Reset",
+                  "value": "2883"
+                },
+                {
+                  "disabled": false,
+                  "description": "Number of seconds the client should wait before retrying.",
+                  "key": "Retry-After",
+                  "value": "6689"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RATE_LIMIT_EXCEEDED\",\n    \"message\": \"Rate limit exceeded for this category. Try again later.\",\n    \"details\": {\n      \"category\": \"auto_generator\",\n      \"retry_after_seconds\": 12\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "916a16e3-8169-490f-8685-a98471ddb3e3",
+              "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "access-tokens"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"filePaths\": [\n    \"<string>\"\n  ],\n  \"source\": \"<string>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INTERNAL_SERVER_ERROR\",\n    \"message\": \"An unexpected server error occurred.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "e10abf2f-8beb-49a4-9f8b-b4f51ef0c7ac",
+              "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "access-tokens"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"filePaths\": [\n    \"<string>\"\n  ],\n  \"source\": \"<string>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"SERVICE_UNAVAILABLE\",\n    \"message\": \"Service is temporarily unavailable.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d8211f16-fd65-41a1-b60e-884e2df28c56",
+              "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "access-tokens"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"filePaths\": [\n    \"<string>\"\n  ],\n  \"source\": \"<string>\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Gateway Timeout",
+              "code": 504,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"GATEWAY_TIMEOUT\",\n    \"message\": \"Gateway timeout.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "https://api.prezent.ai",
+      "key": "baseUrl"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}"
+      }
+    ]
+  },
+  "info": {
+    "_postman_id": "7bc35c09-7c69-4120-b000-23ee0aeb1f8d",
+    "name": "Prezent Platform Audiences File Access API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "The Prezent Platform API exposes Prezent's AutoGenerator, Template Converter,\nAudiences, Themes, and File-upload services as a uniform JSON HTTP API.\n\nThis contract describes the **target agent-ready shape** of the API: every\ndocumented endpoint returns a uniform success envelope `{ \"success\": true,\n\"data\": { ... } }` or a uniform error envelope `{ \"success\": false,\n\"data\": null, \"error\": { \"code\": \"...\", \"message\": \"...\", \"details\": { ... } } }`.\nError codes are drawn from a stable catalog (see `ErrorCode`). The contract\nis additive: handlers may continue to emit legacy keys alongside the\ndocumented ones for backwards compatibility, so schemas explicitly allow\nadditional properties at the envelope and data levels.\n\nSeveral endpoints kick off long-running background work and return a\n`callback_id` that the client polls against a corresponding status\nendpoint. The canonical async polling endpoint for the Template Converter\nfamily is **`GET /api/v2/template-converter/status/{callback_id}`** which\nuses strict HTTP-status mapping (200 only on workflow success, 4xx/5xx on\nworkflow failure). The v1 polling endpoint at\n`/api/v1/template-converter/status/{callbackId}` (and its REST alias\n`GET /api/v1/template-conversions/{callback_id}`) continues to be served\nwith legacy semantics (HTTP 200 with `status` field) and is intentionally\nomitted from this documentation.\n\n**REST resource aliases (v1.1).** AutoGenerator and Template Converter\nendpoints are documented here under their REST-resource path names\n(`/api/v1/autogenerations`, `/api/v1/template-conversions`). The legacy\nRPC-style paths under `/api/v1/autogenerator/*` and\n`/api/v1/template-converter/*` continue to be served indefinitely; they\nreturn a `Deprecation: true` header pointing to the successor alias.\n\n**Conventions that apply to every endpoint** (full reference in the\ncompanion guides on this documentation site):\n\n- **Auth:** API key as a Bearer token — `Authorization: Bearer <key>`.\n  Each key is scoped to an allow-list of endpoint paths; an out-of-scope\n  call returns `404 ENDPOINT_NOT_FOUND`.\n- **Rate limits:** gateway throttle 10 req/s sustained, 5 burst,\n  1,000 req/day per key; per-company per-category 60-second sliding\n  windows; annual quotas (50,000 slide generations/yr, 1,000,000\n  downloads/yr). Limit breaches return `429` with `error.code`\n  `TOO_MANY_REQUESTS` (gateway), `RATE_LIMIT_EXCEEDED` (per-category),\n  or `USAGE_LIMIT_EXCEEDED` (annual).\n- **Errors:** every error uses the `{ success:false, data:null, error:{\n  code, message, details } }` envelope with stable, documented `code`\n  values.\n- **Idempotency & pagination:** mutating requests accept an\n  `Idempotency-Key`; list endpoints accept opt-in `limit`/`cursor`\n  paging.\n\n**Building with an AI agent?** Prezent ships a first-class Model Context\nProtocol (MCP) server. The hosted endpoint is\n`https://mcp.myprezent.com/mcp` (OAuth 2.1, works with Claude.ai Custom\nConnectors); a local stdio server is published on PyPI as\n`prezent-mcp-server` and plugs into Claude Desktop, Cursor, Cline,\nContinue, and Zed. The MCP tools wrap the same REST endpoints\ndescribed here.\n\n**Official SDKs.** Typed REST clients are published for Python and\nTypeScript (`prezent-sdk`) — generated from and versioned against this\nspec. For other languages, generate a client from this document.\n\n**Out of scope of this document:** SCIM endpoints under `/api/v1/scim/*`.\nThose endpoints conform to RFC 7644 (SCIM 2.0) and follow a different\nenvelope (`schemas`, `Resources`, `totalResults`, etc.). They are\ndocumented separately at /docs/scim-user-management.\n\n\nContact Support:\n Name: Prezent API Support\n Email: support@prezent.ai",
+      "type": "text/plain"
+    }
+  }
+}

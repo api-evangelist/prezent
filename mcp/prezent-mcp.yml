@@ -4,55 +4,69 @@ status: published
 source: https://docs.prezent.ai/docs/agents-and-mcp
 server:
   name: prezent
-  transport: http                     # Streamable HTTP + SSE
+  transport: http
   url: https://mcp.myprezent.com/mcp
   auth:
     type: oauth2.1
     flow: authorization_code+pkce
     idp: AWS Cognito (Prezent-backed login)
     discovery:
-      - https://mcp.myprezent.com/.well-known/oauth-authorization-server   # RFC 8414
-      - https://mcp.myprezent.com/.well-known/oauth-protected-resource     # RFC 9728
-    dynamic_registration: https://mcp.myprezent.com/oauth/register         # RFC 7591
-    works_with: [Claude.ai Custom Connectors]
+    - https://mcp.myprezent.com/.well-known/oauth-authorization-server
+    - https://mcp.myprezent.com/.well-known/oauth-protected-resource
+    dynamic_registration: https://mcp.myprezent.com/oauth/register
+    works_with:
+    - Claude.ai Custom Connectors
 local_server:
-  package: prezent-mcp-server         # PyPI
+  package: prezent-mcp-server
   install: pip install prezent-mcp-server
   transport: stdio
-  env: [PRESENTATION_API_TOKEN]
-  clients: [Claude Desktop, Cursor, Cline, Continue, Zed]
+  env:
+  - PRESENTATION_API_TOKEN
+  clients:
+  - Claude Desktop
+  - Cursor
+  - Cline
+  - Continue
+  - Zed
 tools:
-  - name: create_presentation
-    description: Kick off an AutoGenerator presentation build (async).
-    source_operation: openapi/prezent-openapi-original.yml#createAutogeneration
-  - name: check_presentation_status
-    description: Poll status of a presentation build.
-    source_operation: openapi/prezent-openapi-original.yml#getAutogeneration
-  - name: download_presentation_tool
-    description: Download a completed presentation.
-    source_operation: openapi/prezent-openapi-original.yml#createAutogenerationDownload
-  - name: send_reaction_feedback
-    description: Send a reaction (thumbs up/down) on a generation.
-    source_operation: openapi/prezent-openapi-original.yml#createAutogenerationReaction
-  - name: send_text_feedback
-    description: Send free-text feedback on a generation.
-    source_operation: openapi/prezent-openapi-original.yml#createAutogenerationSlideAction
-  - name: convert_template
-    description: Kick off a Template Converter job (async).
-    source_operation: openapi/prezent-openapi-original.yml#createTemplateConversion
-  - name: check_template_converter_status
-    description: Poll status of a template-conversion job.
-    source_operation: openapi/prezent-openapi-original.yml#getTemplateConverterStatusV2
-  - name: send_template_converter_reaction_feedback
-    description: Send a reaction on a template conversion.
-    source_operation: openapi/prezent-openapi-original.yml#putTemplateConversionReaction
-  - name: send_template_converter_text_feedback
-    description: Send free-text feedback on a template conversion.
-    source_operation: openapi/prezent-openapi-original.yml#createTemplateConversionTemplateChange
-  - name: get_accessible_templates
-    description: List templates the caller can use.
-    source_operation: openapi/prezent-openapi-original.yml#listTemplates
-  - name: validate_template
-    description: Validate uploaded files against template requirements.
-    source_operation: openapi/prezent-openapi-original.yml#validateFiles
+- name: create_presentation
+  description: Kick off an AutoGenerator presentation build (async).
+  source_operation: openapi/prezent-openapi-original.yml#createAutogeneration
+- name: check_presentation_status
+  description: Poll status of a presentation build.
+  source_operation: openapi/prezent-openapi-original.yml#getAutogeneration
+- name: download_presentation_tool
+  description: Download a completed presentation.
+  source_operation: openapi/prezent-openapi-original.yml#createAutogenerationDownload
+- name: send_reaction_feedback
+  description: Send a reaction (thumbs up/down) on a generation.
+  source_operation: openapi/prezent-openapi-original.yml#createAutogenerationReaction
+- name: send_text_feedback
+  description: Send free-text feedback on a generation.
+  source_operation: openapi/prezent-openapi-original.yml#createAutogenerationSlideAction
+- name: convert_template
+  description: Kick off a Template Converter job (async).
+  source_operation: openapi/prezent-openapi-original.yml#createTemplateConversion
+- name: check_template_converter_status
+  description: Poll status of a template-conversion job.
+  source_operation: openapi/prezent-openapi-original.yml#getTemplateConverterStatusV2
+- name: send_template_converter_reaction_feedback
+  description: Send a reaction on a template conversion.
+  source_operation: openapi/prezent-openapi-original.yml#putTemplateConversionReaction
+- name: send_template_converter_text_feedback
+  description: Send free-text feedback on a template conversion.
+  source_operation: openapi/prezent-openapi-original.yml#createTemplateConversionTemplateChange
+- name: get_accessible_templates
+  description: List templates the caller can use.
+  source_operation: openapi/prezent-openapi-original.yml#listTemplates
+- name: validate_template
+  description: Validate uploaded files against template requirements.
+  source_operation: openapi/prezent-openapi-original.yml#validateFiles
 notes: MCP tools wrap the same REST endpoints described in the Prezent Platform API OpenAPI.
+deployment:
+  mode: remote
+  endpoint: https://mcp.myprezent.com/mcp
+  verified: probed
+  probe: wall
+  checked: '2026-08-12'
+  source: catalog MCP census

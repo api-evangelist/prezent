@@ -1,0 +1,54 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Prezent Platform Audiences Health API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Health",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Liveness check",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/test"
+          },
+          "docs": "Returns a fixed greeting payload. Exists to allow clients to verify\nconnectivity and credentials. Does not consult any downstream\nservices.\n"
+        },
+        {
+          "info": {
+            "name": "Component health check",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/health",
+            "params": [
+              {
+                "name": "category",
+                "value": "",
+                "type": "query",
+                "description": "Component group to check. Omit for a generic liveness response."
+              }
+            ]
+          },
+          "docs": "Reports the status of downstream services. With no `category`\nparameter, returns a simple \"alive\" greeting. With\n`category=autogenerator` or `category=scim`, reports\nper-component status and returns 503 if any required service is\nunhealthy.\n"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

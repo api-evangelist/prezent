@@ -1,0 +1,324 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Prezent Platform Audiences AutoGenerator API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "AutoGenerator",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Create an AutoGenerator job",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerations",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Kicks off a background pipeline that turns the supplied prompt,\ncontext files, and assets into a Prezent presentation. Returns a\n`callback_id` that the caller polls via\n`GET /api/v1/autogenerations/{callback_id}` until `status` is\n`success` or `failed`.\n"
+        },
+        {
+          "info": {
+            "name": "Read an AutoGenerator job",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v1/autogenerations/:callback_id",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              },
+              {
+                "name": "deck_callback_id",
+                "value": "",
+                "type": "query",
+                "description": "Original deck callback id when polling a regenerate sub-job."
+              },
+              {
+                "name": "operation",
+                "value": "",
+                "type": "query",
+                "description": "Sub-operation hint (used by regenerate flows)."
+              },
+              {
+                "name": "status_auto_polling",
+                "value": "",
+                "type": "query",
+                "description": "Pass `true` to indicate the caller is auto-polling; affects how stalled jobs are surfaced."
+              }
+            ]
+          },
+          "docs": "Returns the current state of a previously started AutoGenerator job.\nThe `status` field in the response data is one of\n`in_progress`, `success`, or `failed`. Once `success`, the payload\nalso contains the generated slides, extracted images, theme/audience\nmetadata, and other context required to display or further edit\nthe deck.\n\nFor the same `callback_id`, polling after `status=success` returns\nthe same cached payload.\n"
+        },
+        {
+          "info": {
+            "name": "Look up multiple AutoGenerator jobs in one call",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerations/lookups",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Returns layout metadata for each `callback_id` in the request. Use\nwhen rendering a list view that needs many decks at once.\n"
+        },
+        {
+          "info": {
+            "name": "Fetch slide-metadata for asset IDs",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerator/meta",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Returns slide-level metadata (titles, layout codes, thumbnails) for\neach asset id provided. Used by editors that need to enrich a slide\nlist without re-running generation.\n"
+        },
+        {
+          "info": {
+            "name": "Create a download artefact for an AutoGenerator deck",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerations/:callback_id/downloads",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Synchronously merges all slides for the given `callback_id` into a\nsingle PowerPoint (or PDF, depending on `outputFormat`) and returns\na signed download URL. The merge step can take up to 60 seconds.\nSubject to the `AUTO_GEN_DOWNLOAD` usage limit in addition to the\nnormal rate limits.\n"
+        },
+        {
+          "info": {
+            "name": "Create a regeneration of an AutoGenerator deck",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerations/:callback_id/regenerations",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              },
+              {
+                "name": "operation",
+                "value": "",
+                "type": "query",
+                "description": "The regenerate sub-operation (for example `node_change`, `slide_regenerate`)."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Re-runs a portion of an existing AutoGenerator deck — typically a\nslide, node, or section — and returns a new `callback_id` to poll.\nCounted as a fresh generation against the `AUTO_GEN` usage cap.\n"
+        },
+        {
+          "info": {
+            "name": "Create a node-level change on an AutoGenerator slide",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerations/:callback_id/node-changes",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Mutates a single node (text, image, shape) within a slide of an\nexisting deck. Returns the updated slide payload synchronously.\n"
+        },
+        {
+          "info": {
+            "name": "Fetch slide data for a single slide callback",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerator/slide-data",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Returns the raw slide-data document (text, images, layout,\nspeaker notes) for the given `slide_callback_id`.\n"
+        },
+        {
+          "info": {
+            "name": "Create an image-extraction for an AutoGenerator deck",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerations/:callback_id/image-extractions",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Reads the PowerPoint at the given S3 location and returns the list\nof embedded images. If `force_update` is true, re-runs extraction\neven when cached results exist.\n"
+        },
+        {
+          "info": {
+            "name": "Search the caller's brand-image library",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerator/brand-image-search",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Returns brand images that match the query string, ordered by\nrelevance. Supports `skip` and `limit` for pagination.\n"
+        },
+        {
+          "info": {
+            "name": "Search the configured stock-image library",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerator/library-image-search",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Searches the configured stock image provider (Adobe Stock or\nFreepik, depending on company configuration). Supports\n`limit`/`offset` pagination. If `searchKey` is omitted, the\nhandler infers it from the supplied slide context.\n"
+        },
+        {
+          "info": {
+            "name": "Create an image replacement on an AutoGenerator slide",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerations/:callback_id/image-replacements",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Swaps an image on a slide with a new image sourced from the\ncaller's workspace, Adobe Stock, Freepik, a previously uploaded\nfile, an extracted image, or S3.\n"
+        },
+        {
+          "info": {
+            "name": "Create a reaction on an AutoGenerator deck",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerations/:callback_id/reactions",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Persists a user reaction (like) or qualitative feedback against a\npreviously generated deck/slide. When `type` is `feedback`,\n`shareDetails` must be provided.\n"
+        },
+        {
+          "info": {
+            "name": "Create a per-slide action on an AutoGenerator deck",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/autogenerations/:callback_id/slide-actions",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Performs one of four actions against a slide: `duplicate`,\n`delete`, `add_sources_to_slides_note`, or `speaker_notes`. The\nrequired body fields depend on `action`.\n"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

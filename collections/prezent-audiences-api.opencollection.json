@@ -1,0 +1,90 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Prezent Platform Audiences API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Audiences",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List audience profiles",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v1/audiences",
+            "params": [
+              {
+                "name": "feature",
+                "value": "",
+                "type": "query",
+                "description": "Filter by feature scope."
+              },
+              {
+                "name": "id",
+                "value": "",
+                "type": "query",
+                "description": "Filter to a single audience by id."
+              },
+              {
+                "name": "sort",
+                "value": "",
+                "type": "query",
+                "description": "Sort expression (for example `name:asc`)."
+              },
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query",
+                "description": "Max items per page (1–200, default 50). Sending this enables cursor pagination."
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query",
+                "description": "Opaque cursor from a previous response's `next_cursor`."
+              }
+            ]
+          },
+          "docs": "Returns the audiences configured for the caller's company.\n\n**Pagination is opt-in.** Send `limit` (and follow `next_cursor`)\nto page; omit both `limit` and `cursor` to receive the full list\nunchanged.\n"
+        },
+        {
+          "info": {
+            "name": "Search audience profiles",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/audiences/search",
+            "params": [
+              {
+                "name": "feature",
+                "value": "",
+                "type": "query",
+                "description": "Filter by feature scope."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Free-text and field-filtered search across audience profiles. Use\nthe request body's `limit` field to cap how many matches are\nreturned (most-relevant first) and the `filterBy*` fields to\nnarrow the search.\n"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

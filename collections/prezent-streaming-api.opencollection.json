@@ -1,0 +1,39 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Prezent Platform Audiences Streaming API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Streaming",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Open a stream session for an existing job",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/streams/sessions",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Returns a short-lived URL (5-minute TTL) that you open with\nEventSource (or any SSE client) to receive a live feed of\nprogress events for the job identified by `callback_id`. The\ntoken in the URL is bound to your API key and to that\n`callback_id` only.\n\nSee the [Streaming guide](/docs/streaming) for the full\nwalk-through, the event catalog, and reconnect semantics.\n"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

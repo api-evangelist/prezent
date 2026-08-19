@@ -1,0 +1,3880 @@
+{
+  "item": [
+    {
+      "id": "27ca2f8c-01cb-4878-9452-f1ac8fc4a3fb",
+      "name": "Webhooks",
+      "description": {
+        "content": "Receive signed HTTPS callbacks when Prezent jobs complete or fail. Subscriptions are scoped per API key, retried over a 21h window, and auto-disabled after 50 consecutive failures. See the [Webhooks guide](/docs/webhooks) for the signature format and verification examples.",
+        "type": "text/plain"
+      },
+      "item": [
+        {
+          "id": "fe5f13eb-3c9e-4755-97c9-363f6f9feabf",
+          "name": "Create a webhook subscription",
+          "request": {
+            "name": "Create a webhook subscription",
+            "description": {
+              "content": "Registers a new HTTPS endpoint to receive signed delivery\ncallbacks for the listed event types. Returns the HMAC `secret`\nONCE — store it securely. Subsequent reads only expose the\n`secret_prefix`.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "webhook-subscriptions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"*\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"<string>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "d05aaa99-9d42-43c7-9671-6f0b6a910d1c",
+              "name": "Subscription created. Body contains the `secret` — the only response that ever exposes it.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://hooks.example.com/prezent\",\n  \"events\": [\n    \"autogeneration.completed\",\n    \"autogeneration.failed\"\n  ],\n  \"description\": \"Push completions into our deal-room worker.\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"created_at\": \"1947-03-29T17:41:02.049Z\",\n    \"events\": [\n      \"autogeneration.completed\",\n      \"autogeneration.failed\"\n    ],\n    \"id\": \"whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c\",\n    \"secret\": \"whsec_4mZkV8t9oFp1qR3sT7uW9xY2zA5bCdEfGhI\",\n    \"secret_prefix\": \"whsec_\",\n    \"status\": \"disabled\",\n    \"updated_at\": \"2008-01-15T14:22:14.308Z\",\n    \"url\": \"https://hooks.example.com/prezent\",\n    \"description\": \"Push completions into our deal-room worker.\",\n    \"last_delivery_at\": \"1993-12-20T22:07:59.315Z\",\n    \"last_failure_at\": \"2019-10-14T07:30:49.915Z\",\n    \"consecutive_failure_count\": 3421\n  },\n  \"success\": false\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "45dca17c-d1ef-4ae4-8c0a-b4f3881bb5b1",
+              "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://hooks.example.com/prezent\",\n  \"events\": [\n    \"autogeneration.completed\",\n    \"autogeneration.failed\"\n  ],\n  \"description\": \"Push completions into our deal-room worker.\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"BAD_REQUEST\",\n    \"message\": \"Bad request.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "6f5bcfb8-5da3-4652-863e-4b9383bda924",
+              "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://hooks.example.com/prezent\",\n  \"events\": [\n    \"autogeneration.completed\",\n    \"autogeneration.failed\"\n  ],\n  \"description\": \"Push completions into our deal-room worker.\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INVALID_API_KEY\",\n    \"message\": \"API key not found or not authorized.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "ee325890-1b39-46aa-9337-d30c956178bc",
+              "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://hooks.example.com/prezent\",\n  \"events\": [\n    \"autogeneration.completed\",\n    \"autogeneration.failed\"\n  ],\n  \"description\": \"Push completions into our deal-room worker.\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"Access to the resource is forbidden.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "e624ffcd-a7cf-4645-b226-45f506c410f9",
+              "name": "Request was well-formed but failed semantic validation.\n`error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://hooks.example.com/prezent\",\n  \"events\": [\n    \"autogeneration.completed\",\n    \"autogeneration.failed\"\n  ],\n  \"description\": \"Push completions into our deal-room worker.\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INVALID_INPUT\",\n    \"message\": \"Invalid input provided.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "e3e61854-c8f8-44cd-90fc-d5bfefce69f9",
+              "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://hooks.example.com/prezent\",\n  \"events\": [\n    \"autogeneration.completed\",\n    \"autogeneration.failed\"\n  ],\n  \"description\": \"Push completions into our deal-room worker.\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "The configured request limit for the rate-limit category\n(requests per 60-second window) that applied to this call.\nThe applicable category is the operation's `x-rate-limit-category`.\nReturned on every response (success and 429) so clients can\nself-throttle. See the Rate limits guide for the default\nper-category numbers.\n",
+                  "key": "X-RateLimit-Limit",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Approximate number of requests remaining in the current\n60-second window for this caller and category.\n",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (seconds) when the current rate-limit window resets.",
+                  "key": "X-RateLimit-Reset",
+                  "value": "34"
+                },
+                {
+                  "disabled": false,
+                  "description": "Number of seconds the client should wait before retrying.",
+                  "key": "Retry-After",
+                  "value": "5129"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RATE_LIMIT_EXCEEDED\",\n    \"message\": \"Rate limit exceeded for this category. Try again later.\",\n    \"details\": {\n      \"category\": \"auto_generator\",\n      \"retry_after_seconds\": 12\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "5340f40d-6dd6-4f5a-bfb0-1bc2d8d53a1e",
+              "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://hooks.example.com/prezent\",\n  \"events\": [\n    \"autogeneration.completed\",\n    \"autogeneration.failed\"\n  ],\n  \"description\": \"Push completions into our deal-room worker.\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INTERNAL_SERVER_ERROR\",\n    \"message\": \"An unexpected server error occurred.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "855f8d7d-07f6-435a-9340-a79166d48447",
+              "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://hooks.example.com/prezent\",\n  \"events\": [\n    \"autogeneration.completed\",\n    \"autogeneration.failed\"\n  ],\n  \"description\": \"Push completions into our deal-room worker.\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"SERVICE_UNAVAILABLE\",\n    \"message\": \"Service is temporarily unavailable.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "350223f7-3fb2-4b91-a0f6-b410f3c220d4",
+              "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"https://hooks.example.com/prezent\",\n  \"events\": [\n    \"autogeneration.completed\",\n    \"autogeneration.failed\"\n  ],\n  \"description\": \"Push completions into our deal-room worker.\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Gateway Timeout",
+              "code": 504,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"GATEWAY_TIMEOUT\",\n    \"message\": \"Gateway timeout.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "44cf7905-9e31-42db-b1ea-4e08573541ae",
+          "name": "List webhook subscriptions",
+          "request": {
+            "name": "List webhook subscriptions",
+            "description": {
+              "content": "Returns the subscriptions owned by the calling API key. Excludes\nsoft-deleted rows. Use the standard cursor-pagination parameters\n— see [Developer Guide → Pagination](/docs/developer-guide#pagination).\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "webhook-subscriptions"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [
+                {
+                  "disabled": false,
+                  "key": "limit",
+                  "value": "25"
+                },
+                {
+                  "disabled": false,
+                  "key": "cursor",
+                  "value": "<string>"
+                }
+              ],
+              "variable": []
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "759224e1-e211-4135-8d23-92ee5b0b1ecb",
+              "name": "Paginated subscription list.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "25"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"items\": [\n      {\n        \"id\": \"whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c\",\n        \"url\": \"https://hooks.example.com/prezent\",\n        \"secret_prefix\": \"whsec_\",\n        \"events\": [\n          \"autogeneration.completed\",\n          \"autogeneration.failed\"\n        ],\n        \"status\": \"active\",\n        \"created_at\": \"2022-06-30T16:30:21.019Z\",\n        \"updated_at\": \"2006-05-07T06:43:39.135Z\",\n        \"description\": \"Push completions into our deal-room worker.\",\n        \"last_delivery_at\": \"1996-10-24T20:39:40.365Z\",\n        \"last_failure_at\": \"1985-05-24T18:46:06.962Z\",\n        \"consecutive_failure_count\": 9991\n      },\n      {\n        \"id\": \"whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c\",\n        \"url\": \"https://hooks.example.com/prezent\",\n        \"secret_prefix\": \"whsec_\",\n        \"events\": [\n          \"autogeneration.completed\",\n          \"autogeneration.failed\"\n        ],\n        \"status\": \"active\",\n        \"created_at\": \"1968-12-08T01:45:09.124Z\",\n        \"updated_at\": \"2025-03-21T02:25:06.310Z\",\n        \"description\": \"Push completions into our deal-room worker.\",\n        \"last_delivery_at\": \"1976-05-09T06:01:20.506Z\",\n        \"last_failure_at\": \"2009-12-16T21:33:28.388Z\",\n        \"consecutive_failure_count\": 4737\n      }\n    ],\n    \"next_cursor\": \"string\"\n  },\n  \"success\": true\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "07f6e6f6-e5f4-458c-9769-dea0c26cd819",
+              "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "25"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"BAD_REQUEST\",\n    \"message\": \"Bad request.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "cc457f9c-7682-4942-b4cc-1feeadb8da05",
+              "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "25"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INVALID_API_KEY\",\n    \"message\": \"API key not found or not authorized.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d3fc6a6b-e38b-44db-835c-36e7d5626f7e",
+              "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "25"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"Access to the resource is forbidden.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "5c4834c1-3b70-48df-9574-6856e0f2b4e6",
+              "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "25"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "The configured request limit for the rate-limit category\n(requests per 60-second window) that applied to this call.\nThe applicable category is the operation's `x-rate-limit-category`.\nReturned on every response (success and 429) so clients can\nself-throttle. See the Rate limits guide for the default\nper-category numbers.\n",
+                  "key": "X-RateLimit-Limit",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Approximate number of requests remaining in the current\n60-second window for this caller and category.\n",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (seconds) when the current rate-limit window resets.",
+                  "key": "X-RateLimit-Reset",
+                  "value": "34"
+                },
+                {
+                  "disabled": false,
+                  "description": "Number of seconds the client should wait before retrying.",
+                  "key": "Retry-After",
+                  "value": "5129"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RATE_LIMIT_EXCEEDED\",\n    \"message\": \"Rate limit exceeded for this category. Try again later.\",\n    \"details\": {\n      \"category\": \"auto_generator\",\n      \"retry_after_seconds\": 12\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "fd0e61a1-19dc-450c-8744-9ccfd77ba5d6",
+              "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "25"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INTERNAL_SERVER_ERROR\",\n    \"message\": \"An unexpected server error occurred.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "0df6c4b0-4003-42c3-8ed8-22d91bb4e2be",
+              "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "25"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"SERVICE_UNAVAILABLE\",\n    \"message\": \"Service is temporarily unavailable.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "226ec7a3-9443-494c-a9b6-e85494cdce73",
+              "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "25"
+                    },
+                    {
+                      "key": "cursor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Gateway Timeout",
+              "code": 504,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"GATEWAY_TIMEOUT\",\n    \"message\": \"Gateway timeout.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "d7c494ca-51ec-4a96-89c1-d8233ff92cff",
+          "name": "Read a webhook subscription",
+          "request": {
+            "name": "Read a webhook subscription",
+            "description": {
+              "content": "Returns one subscription. `secret_prefix` (the first 6 chars of\nthe HMAC secret) is exposed for human disambiguation; the full\nsecret is never returned by a read.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "webhook-subscriptions",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<string>",
+                  "key": "id",
+                  "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "GET",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "9e43b944-effe-41b1-80b5-7c331269232c",
+              "name": "Subscription found.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c\",\n    \"url\": \"https://hooks.example.com/prezent\",\n    \"secret_prefix\": \"whsec_\",\n    \"events\": [\n      \"autogeneration.completed\",\n      \"autogeneration.failed\"\n    ],\n    \"status\": \"active\",\n    \"created_at\": \"2012-07-03T03:43:03.203Z\",\n    \"updated_at\": \"1986-04-19T09:24:12.980Z\",\n    \"description\": \"Push completions into our deal-room worker.\",\n    \"last_delivery_at\": \"2025-10-11T02:21:24.867Z\",\n    \"last_failure_at\": \"2017-09-30T17:50:06.842Z\",\n    \"consecutive_failure_count\": 7181\n  },\n  \"success\": true\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "35c15a67-4226-4def-a67d-8398766d0139",
+              "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INVALID_API_KEY\",\n    \"message\": \"API key not found or not authorized.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "375321ab-b542-4114-91d7-e1a79ace7688",
+              "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"Access to the resource is forbidden.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "e4c7f07e-959b-4b0d-982b-31222529c1fa",
+              "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RESOURCE_NOT_FOUND\",\n    \"message\": \"The requested resource was not found.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "77e5cff2-0e34-4a51-8573-5665974245f1",
+              "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "The configured request limit for the rate-limit category\n(requests per 60-second window) that applied to this call.\nThe applicable category is the operation's `x-rate-limit-category`.\nReturned on every response (success and 429) so clients can\nself-throttle. See the Rate limits guide for the default\nper-category numbers.\n",
+                  "key": "X-RateLimit-Limit",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Approximate number of requests remaining in the current\n60-second window for this caller and category.\n",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (seconds) when the current rate-limit window resets.",
+                  "key": "X-RateLimit-Reset",
+                  "value": "34"
+                },
+                {
+                  "disabled": false,
+                  "description": "Number of seconds the client should wait before retrying.",
+                  "key": "Retry-After",
+                  "value": "5129"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RATE_LIMIT_EXCEEDED\",\n    \"message\": \"Rate limit exceeded for this category. Try again later.\",\n    \"details\": {\n      \"category\": \"auto_generator\",\n      \"retry_after_seconds\": 12\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "2272d39e-855c-488f-b86d-3063c2e669ee",
+              "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INTERNAL_SERVER_ERROR\",\n    \"message\": \"An unexpected server error occurred.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "8c3712a0-2b93-4ae0-8a7d-4c02ba7a7c07",
+              "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"SERVICE_UNAVAILABLE\",\n    \"message\": \"Service is temporarily unavailable.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "2243ef3a-ba46-4a68-a70f-ba913a6663dd",
+              "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "GET",
+                "body": {}
+              },
+              "status": "Gateway Timeout",
+              "code": 504,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"GATEWAY_TIMEOUT\",\n    \"message\": \"Gateway timeout.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "9b3210db-246c-4d77-ad1d-ddc4b35947c0",
+          "name": "Update a webhook subscription",
+          "request": {
+            "name": "Update a webhook subscription",
+            "description": {
+              "content": "Partial update. Any combination of `url`, `events`, `description`,\nor `status` may be supplied. Changes to `url` are re-validated\nagainst the SSRF / scheme / port rules. Setting `status` to\n`\"active\"` re-enables an auto-disabled subscription.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "webhook-subscriptions",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<string>",
+                  "key": "id",
+                  "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "PATCH",
+            "auth": null,
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"<string>\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"<string>\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "id": "043a5f21-9d69-4ef1-b1b2-b1a3efbeac2d",
+              "name": "Subscription updated.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"template_conversion.completed\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c\",\n    \"url\": \"https://hooks.example.com/prezent\",\n    \"secret_prefix\": \"whsec_\",\n    \"events\": [\n      \"autogeneration.completed\",\n      \"autogeneration.failed\"\n    ],\n    \"status\": \"active\",\n    \"created_at\": \"2012-07-03T03:43:03.203Z\",\n    \"updated_at\": \"1986-04-19T09:24:12.980Z\",\n    \"description\": \"Push completions into our deal-room worker.\",\n    \"last_delivery_at\": \"2025-10-11T02:21:24.867Z\",\n    \"last_failure_at\": \"2017-09-30T17:50:06.842Z\",\n    \"consecutive_failure_count\": 7181\n  },\n  \"success\": true\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "e38d1055-08d2-4793-8436-296ca3ea266f",
+              "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"template_conversion.completed\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"BAD_REQUEST\",\n    \"message\": \"Bad request.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "c99a74b5-fb17-46e1-a28e-29f908617549",
+              "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"template_conversion.completed\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INVALID_API_KEY\",\n    \"message\": \"API key not found or not authorized.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d267ba70-728a-4d3f-9cff-1f5e95e339f8",
+              "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"template_conversion.completed\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"Access to the resource is forbidden.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "087fa242-6022-462f-ac13-64912c76ed9b",
+              "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"template_conversion.completed\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RESOURCE_NOT_FOUND\",\n    \"message\": \"The requested resource was not found.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "310d3f13-0cc5-43aa-afd2-e362ae385e11",
+              "name": "Request was well-formed but failed semantic validation.\n`error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"template_conversion.completed\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Unprocessable Entity (WebDAV) (RFC 4918)",
+              "code": 422,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INVALID_INPUT\",\n    \"message\": \"Invalid input provided.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "93b2e371-423c-4264-9818-92910f03db86",
+              "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"template_conversion.completed\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "The configured request limit for the rate-limit category\n(requests per 60-second window) that applied to this call.\nThe applicable category is the operation's `x-rate-limit-category`.\nReturned on every response (success and 429) so clients can\nself-throttle. See the Rate limits guide for the default\nper-category numbers.\n",
+                  "key": "X-RateLimit-Limit",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Approximate number of requests remaining in the current\n60-second window for this caller and category.\n",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (seconds) when the current rate-limit window resets.",
+                  "key": "X-RateLimit-Reset",
+                  "value": "34"
+                },
+                {
+                  "disabled": false,
+                  "description": "Number of seconds the client should wait before retrying.",
+                  "key": "Retry-After",
+                  "value": "5129"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RATE_LIMIT_EXCEEDED\",\n    \"message\": \"Rate limit exceeded for this category. Try again later.\",\n    \"details\": {\n      \"category\": \"auto_generator\",\n      \"retry_after_seconds\": 12\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "1802699c-9dec-4746-9bfb-f5d96e5e7de2",
+              "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"template_conversion.completed\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INTERNAL_SERVER_ERROR\",\n    \"message\": \"An unexpected server error occurred.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "933b6a80-aff7-4ea8-94ee-32ff2df82690",
+              "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"template_conversion.completed\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"SERVICE_UNAVAILABLE\",\n    \"message\": \"Service is temporarily unavailable.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "dd06aa5c-e263-44ab-b102-f4331cac9be0",
+              "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "PATCH",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"template_conversion.completed\"\n  ],\n  \"description\": \"<string>\",\n  \"status\": \"active\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Gateway Timeout",
+              "code": 504,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"GATEWAY_TIMEOUT\",\n    \"message\": \"Gateway timeout.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "51439f9e-0606-4027-9fcc-6452b3374621",
+          "name": "Delete a webhook subscription",
+          "request": {
+            "name": "Delete a webhook subscription",
+            "description": {
+              "content": "Soft-deletes the subscription. The `id` is permanently retired\n— no future deliveries will be attempted, and the row is\nexcluded from list responses.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "webhook-subscriptions",
+                ":id"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<string>",
+                  "key": "id",
+                  "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "DELETE",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "630dd2f1-90be-42ef-b5c2-95a932c2a065",
+              "name": "Subscription deleted.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c\",\n    \"deleted\": false\n  },\n  \"success\": true\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "fd1c8029-d66c-4409-bf97-b9d186d2cb16",
+              "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INVALID_API_KEY\",\n    \"message\": \"API key not found or not authorized.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "0bae650b-cd56-4394-b1fa-b5ea3e2729c3",
+              "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"Access to the resource is forbidden.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "b9d891b0-9831-4117-b2fb-968bcba8401b",
+              "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RESOURCE_NOT_FOUND\",\n    \"message\": \"The requested resource was not found.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "8a5e973c-2654-45d6-ac37-0d7acf538a99",
+              "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "The configured request limit for the rate-limit category\n(requests per 60-second window) that applied to this call.\nThe applicable category is the operation's `x-rate-limit-category`.\nReturned on every response (success and 429) so clients can\nself-throttle. See the Rate limits guide for the default\nper-category numbers.\n",
+                  "key": "X-RateLimit-Limit",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Approximate number of requests remaining in the current\n60-second window for this caller and category.\n",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (seconds) when the current rate-limit window resets.",
+                  "key": "X-RateLimit-Reset",
+                  "value": "34"
+                },
+                {
+                  "disabled": false,
+                  "description": "Number of seconds the client should wait before retrying.",
+                  "key": "Retry-After",
+                  "value": "5129"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RATE_LIMIT_EXCEEDED\",\n    \"message\": \"Rate limit exceeded for this category. Try again later.\",\n    \"details\": {\n      \"category\": \"auto_generator\",\n      \"retry_after_seconds\": 12\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d6629297-512a-48d3-808b-b5cd3fc8629d",
+              "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INTERNAL_SERVER_ERROR\",\n    \"message\": \"An unexpected server error occurred.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "f1c78272-31c7-45fd-a7c8-4ede49e5f491",
+              "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"SERVICE_UNAVAILABLE\",\n    \"message\": \"Service is temporarily unavailable.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "f326930c-9fc5-4e59-92b2-08a3abc93ca1",
+              "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "DELETE",
+                "body": {}
+              },
+              "status": "Gateway Timeout",
+              "code": 504,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"GATEWAY_TIMEOUT\",\n    \"message\": \"Gateway timeout.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "ea7942e1-723d-46d8-a229-7404cb45a1dc",
+          "name": "Rotate the HMAC secret for a subscription",
+          "request": {
+            "name": "Rotate the HMAC secret for a subscription",
+            "description": {
+              "content": "Generates a new HMAC `secret` and invalidates the old one\nimmediately. Returns the new secret ONCE — store it before\nresponding to the caller. There is no grace window during which\nboth secrets verify; if you need an overlap, stand up a second\nsubscription on a distinct path, switch over, then delete the\nold one.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "webhook-subscriptions",
+                ":id",
+                "rotate-secret"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<string>",
+                  "key": "id",
+                  "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "2a719095-2630-4b41-92a1-8f99d85a591c",
+              "name": "Secret rotated. Body contains the new `secret` — the only place it is ever returned.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "rotate-secret"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"id\": \"whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c\",\n    \"secret\": \"whsec_NewlyGeneratedSecretMaterial\",\n    \"secret_prefix\": \"whsec_\",\n    \"rotated_at\": \"2025-05-14T22:36:26.006Z\"\n  },\n  \"success\": true\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "6962b32d-8e64-4eee-9a06-df66e370cd89",
+              "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "rotate-secret"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INVALID_API_KEY\",\n    \"message\": \"API key not found or not authorized.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "ddcf98d6-58f2-4127-beef-7f89beaf6a3c",
+              "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "rotate-secret"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"Access to the resource is forbidden.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "0a5aaaa1-c53b-48a7-8e88-dd06a07e889a",
+              "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "rotate-secret"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RESOURCE_NOT_FOUND\",\n    \"message\": \"The requested resource was not found.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "4da70298-1a70-45bf-84b5-0533d3ea8e49",
+              "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "rotate-secret"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "The configured request limit for the rate-limit category\n(requests per 60-second window) that applied to this call.\nThe applicable category is the operation's `x-rate-limit-category`.\nReturned on every response (success and 429) so clients can\nself-throttle. See the Rate limits guide for the default\nper-category numbers.\n",
+                  "key": "X-RateLimit-Limit",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Approximate number of requests remaining in the current\n60-second window for this caller and category.\n",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (seconds) when the current rate-limit window resets.",
+                  "key": "X-RateLimit-Reset",
+                  "value": "34"
+                },
+                {
+                  "disabled": false,
+                  "description": "Number of seconds the client should wait before retrying.",
+                  "key": "Retry-After",
+                  "value": "5129"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RATE_LIMIT_EXCEEDED\",\n    \"message\": \"Rate limit exceeded for this category. Try again later.\",\n    \"details\": {\n      \"category\": \"auto_generator\",\n      \"retry_after_seconds\": 12\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "a6800dcd-df25-4460-ae57-4fbe018fec00",
+              "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "rotate-secret"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INTERNAL_SERVER_ERROR\",\n    \"message\": \"An unexpected server error occurred.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "2569383e-268b-48da-bcd5-02b11dad8b57",
+              "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "rotate-secret"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"SERVICE_UNAVAILABLE\",\n    \"message\": \"Service is temporarily unavailable.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "76dab634-2967-4357-a8c9-07bd389fe4a0",
+              "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "rotate-secret"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Gateway Timeout",
+              "code": 504,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"GATEWAY_TIMEOUT\",\n    \"message\": \"Gateway timeout.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        },
+        {
+          "id": "0ae73c62-c2de-4d48-a09a-948f1ea73d2a",
+          "name": "Send a test delivery to a subscription",
+          "request": {
+            "name": "Send a test delivery to a subscription",
+            "description": {
+              "content": "Immediately POSTs a synthetic `webhook.test` event to the\nsubscription's URL (signed with the current secret, 5s timeout,\nno retries) and returns the response status + body verbatim.\nUse this to verify the receiver's signature-verification path\nbefore real traffic flows.\n",
+              "type": "text/plain"
+            },
+            "url": {
+              "path": [
+                "api",
+                "v1",
+                "webhook-subscriptions",
+                ":id",
+                "test"
+              ],
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "query": [],
+              "variable": [
+                {
+                  "disabled": false,
+                  "type": "any",
+                  "value": "<string>",
+                  "key": "id",
+                  "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "method": "POST",
+            "auth": null
+          },
+          "response": [
+            {
+              "id": "979f4284-6db5-4fcd-9c60-210f0e092f6e",
+              "name": "Test delivery attempted. The `delivery.ok` field indicates whether the receiver returned a 2xx.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "test"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": {\n    \"subscription_id\": \"whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c\",\n    \"event\": {\n      \"id\": \"evt_8c2a1f7e6d3b4a5c9e0f8d7b6a5c4d3e\",\n      \"type\": \"webhook.test\",\n      \"api_version\": \"1.0\",\n      \"created_at\": \"1979-05-07T14:46:18.813Z\",\n      \"data\": {\n        \"key_0\": \"string\"\n      }\n    },\n    \"delivery\": {\n      \"ok\": true,\n      \"status\": 200,\n      \"delivery_id\": \"whdl_e74673b424d92ba292f30089\",\n      \"error\": \"string\",\n      \"response_body_preview\": \"string\"\n    }\n  },\n  \"success\": true\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "c618087c-a589-4b3f-afa0-5aee8bc201bd",
+              "name": "Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "test"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"BAD_REQUEST\",\n    \"message\": \"Bad request.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "d8e0a028-8deb-45bf-a3d2-b9f121762b80",
+              "name": "Caller did not present a valid Bearer token, or the token has\nexpired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,\n`EXPIRED_API_KEY`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "test"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INVALID_API_KEY\",\n    \"message\": \"API key not found or not authorized.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "f9974d1b-90a4-4017-ab43-fd89048a7b9e",
+              "name": "Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "test"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Forbidden",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"FORBIDDEN\",\n    \"message\": \"Access to the resource is forbidden.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "51d14044-e406-49e5-a3cb-3169bd5f6946",
+              "name": "Requested endpoint or resource does not exist. `error.code` is\none of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "test"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Not Found",
+              "code": 404,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RESOURCE_NOT_FOUND\",\n    \"message\": \"The requested resource was not found.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "15ab31e7-97a0-4ad0-b987-997c18cf83d9",
+              "name": "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "test"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Too Many Requests",
+              "code": 429,
+              "header": [
+                {
+                  "disabled": false,
+                  "description": "The configured request limit for the rate-limit category\n(requests per 60-second window) that applied to this call.\nThe applicable category is the operation's `x-rate-limit-category`.\nReturned on every response (success and 429) so clients can\nself-throttle. See the Rate limits guide for the default\nper-category numbers.\n",
+                  "key": "X-RateLimit-Limit",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Approximate number of requests remaining in the current\n60-second window for this caller and category.\n",
+                  "key": "X-RateLimit-Remaining",
+                  "value": "5129"
+                },
+                {
+                  "disabled": false,
+                  "description": "Unix timestamp (seconds) when the current rate-limit window resets.",
+                  "key": "X-RateLimit-Reset",
+                  "value": "34"
+                },
+                {
+                  "disabled": false,
+                  "description": "Number of seconds the client should wait before retrying.",
+                  "key": "Retry-After",
+                  "value": "5129"
+                },
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"RATE_LIMIT_EXCEEDED\",\n    \"message\": \"Rate limit exceeded for this category. Try again later.\",\n    \"details\": {\n      \"category\": \"auto_generator\",\n      \"retry_after_seconds\": 12\n    }\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "07dcaf64-fd5d-49a4-944c-0b2086e774ce",
+              "name": "Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "test"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Internal Server Error",
+              "code": 500,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"INTERNAL_SERVER_ERROR\",\n    \"message\": \"An unexpected server error occurred.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "a46397dc-1c54-4271-ae9a-862ff7845b13",
+              "name": "Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "test"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Service Unavailable",
+              "code": 503,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"SERVICE_UNAVAILABLE\",\n    \"message\": \"Service is temporarily unavailable.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            },
+            {
+              "id": "0519d09a-7649-4f10-b40a-b23178778cde",
+              "name": "A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.",
+              "originalRequest": {
+                "url": {
+                  "path": [
+                    "api",
+                    "v1",
+                    "webhook-subscriptions",
+                    ":id",
+                    "test"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "disabled": false,
+                      "type": "any",
+                      "value": "<string>",
+                      "key": "id",
+                      "description": "(Required) The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Added as a part of security scheme: bearer",
+                      "type": "text/plain"
+                    },
+                    "key": "Authorization",
+                    "value": "Bearer <token>"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "method": "POST",
+                "body": {}
+              },
+              "status": "Gateway Timeout",
+              "code": 504,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"success\": false,\n  \"data\": null,\n  \"error\": {\n    \"code\": \"GATEWAY_TIMEOUT\",\n    \"message\": \"Gateway timeout.\",\n    \"details\": {}\n  }\n}",
+              "cookie": [],
+              "_postman_previewlanguage": "json"
+            }
+          ],
+          "event": [],
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          }
+        }
+      ],
+      "event": []
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "type": "string",
+      "value": "https://api.prezent.ai",
+      "key": "baseUrl"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}"
+      }
+    ]
+  },
+  "info": {
+    "_postman_id": "8abd44bd-5570-47cc-8905-9c497829f8b9",
+    "name": "Prezent Platform Audiences Webhooks API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": {
+      "content": "The Prezent Platform API exposes Prezent's AutoGenerator, Template Converter,\nAudiences, Themes, and File-upload services as a uniform JSON HTTP API.\n\nThis contract describes the **target agent-ready shape** of the API: every\ndocumented endpoint returns a uniform success envelope `{ \"success\": true,\n\"data\": { ... } }` or a uniform error envelope `{ \"success\": false,\n\"data\": null, \"error\": { \"code\": \"...\", \"message\": \"...\", \"details\": { ... } } }`.\nError codes are drawn from a stable catalog (see `ErrorCode`). The contract\nis additive: handlers may continue to emit legacy keys alongside the\ndocumented ones for backwards compatibility, so schemas explicitly allow\nadditional properties at the envelope and data levels.\n\nSeveral endpoints kick off long-running background work and return a\n`callback_id` that the client polls against a corresponding status\nendpoint. The canonical async polling endpoint for the Template Converter\nfamily is **`GET /api/v2/template-converter/status/{callback_id}`** which\nuses strict HTTP-status mapping (200 only on workflow success, 4xx/5xx on\nworkflow failure). The v1 polling endpoint at\n`/api/v1/template-converter/status/{callbackId}` (and its REST alias\n`GET /api/v1/template-conversions/{callback_id}`) continues to be served\nwith legacy semantics (HTTP 200 with `status` field) and is intentionally\nomitted from this documentation.\n\n**REST resource aliases (v1.1).** AutoGenerator and Template Converter\nendpoints are documented here under their REST-resource path names\n(`/api/v1/autogenerations`, `/api/v1/template-conversions`). The legacy\nRPC-style paths under `/api/v1/autogenerator/*` and\n`/api/v1/template-converter/*` continue to be served indefinitely; they\nreturn a `Deprecation: true` header pointing to the successor alias.\n\n**Conventions that apply to every endpoint** (full reference in the\ncompanion guides on this documentation site):\n\n- **Auth:** API key as a Bearer token — `Authorization: Bearer <key>`.\n  Each key is scoped to an allow-list of endpoint paths; an out-of-scope\n  call returns `404 ENDPOINT_NOT_FOUND`.\n- **Rate limits:** gateway throttle 10 req/s sustained, 5 burst,\n  1,000 req/day per key; per-company per-category 60-second sliding\n  windows; annual quotas (50,000 slide generations/yr, 1,000,000\n  downloads/yr). Limit breaches return `429` with `error.code`\n  `TOO_MANY_REQUESTS` (gateway), `RATE_LIMIT_EXCEEDED` (per-category),\n  or `USAGE_LIMIT_EXCEEDED` (annual).\n- **Errors:** every error uses the `{ success:false, data:null, error:{\n  code, message, details } }` envelope with stable, documented `code`\n  values.\n- **Idempotency & pagination:** mutating requests accept an\n  `Idempotency-Key`; list endpoints accept opt-in `limit`/`cursor`\n  paging.\n\n**Building with an AI agent?** Prezent ships a first-class Model Context\nProtocol (MCP) server. The hosted endpoint is\n`https://mcp.myprezent.com/mcp` (OAuth 2.1, works with Claude.ai Custom\nConnectors); a local stdio server is published on PyPI as\n`prezent-mcp-server` and plugs into Claude Desktop, Cursor, Cline,\nContinue, and Zed. The MCP tools wrap the same REST endpoints\ndescribed here.\n\n**Official SDKs.** Typed REST clients are published for Python and\nTypeScript (`prezent-sdk`) — generated from and versioned against this\nspec. For other languages, generate a client from this document.\n\n**Out of scope of this document:** SCIM endpoints under `/api/v1/scim/*`.\nThose endpoints conform to RFC 7644 (SCIM 2.0) and follow a different\nenvelope (`schemas`, `Resources`, `totalResults`, etc.). They are\ndocumented separately at /docs/scim-user-management.\n\n\nContact Support:\n Name: Prezent API Support\n Email: support@prezent.ai",
+      "type": "text/plain"
+    }
+  }
+}

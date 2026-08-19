@@ -1,0 +1,368 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Prezent Platform Audiences Template Converter API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Template Converter",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Create a template-conversion job",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/template-conversions",
+            "headers": [
+              {
+                "name": "Idempotency-Key",
+                "value": ""
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Kicks off a pipeline that applies the target brand template\n(`templateName`) to the input PowerPoint (`fileId` or\n`inputDeck`). Returns a `callback_id` to poll. Counted against\nthe `TC_START` usage limit.\n\nSubsequent calls in the same conversion lifecycle: poll the v2\nstatus endpoint at\n`GET /api/v2/template-converter/status/{callback_id}` until the\npipeline reaches a terminal state.\n"
+        },
+        {
+          "info": {
+            "name": "Poll a template-conversion job (strict status mapping)",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v2/template-converter/status/:callback_id",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              },
+              {
+                "name": "source",
+                "value": "",
+                "type": "query",
+                "description": "Pass `nexus` to include the full `outputs` blob in the response (intended for Prezent's Nexus front-end)."
+              }
+            ]
+          },
+          "docs": "v2 polling endpoint with **strict HTTP-status mapping**: returns\n**HTTP 200 only when the conversion has completed successfully**.\nWhile the pipeline is still running the status is `in_progress`\nand the response is **HTTP 202**. On workflow failure the\nendpoint returns a `4xx` or `5xx` with the standard error\nenvelope.\n\nUse this endpoint instead of the v1 polling endpoint\n(`/api/v1/template-converter/status/{callbackId}`) whenever\npossible — agents can rely on the HTTP status alone to branch on\n"
+        },
+        {
+          "info": {
+            "name": "Create a preprocessing chunk for a template-conversion input",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/preprocessings",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Accepts one chunk of a multi-chunk PPTX upload, used as the\n`inputDeck` for a subsequent template-conversion job. Only `.pptx`\nfiles are accepted. Collection-level — the upload is grouped by\nthe body's `fileIdentifier` and precedes the creation of the\nconversion's `callback_id`.\n"
+        },
+        {
+          "info": {
+            "name": "Create a finalisation for a chunked PPTX upload",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/finalisations",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Concludes a chunked upload identified by `fileIdentifier`. The\nfinalised file must be a `.pptx`, no larger than 200 MB, and no\nmore than 100 pages. Collection-level — runs before the conversion's\n`callback_id` exists.\n"
+        },
+        {
+          "info": {
+            "name": "Read review suggestions for a template-conversion",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/review-suggestions",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ]
+          },
+          "docs": "Returns the list of editorial suggestions produced for the\nconverted deck identified by `callback_id`. Each suggestion may\nbe applied via the corresponding PATCH endpoint.\n"
+        },
+        {
+          "info": {
+            "name": "Update review suggestions on a template-conversion",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/review-suggestions",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Applies a subset of editorial suggestions to the converted deck\nidentified by `callback_id`. Kicks off a background pipeline that\nproduces a new derived deck; the response carries a new\n`callback_id` to poll.\n"
+        },
+        {
+          "info": {
+            "name": "Create a template change on a template-conversion",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/template-changes",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Re-runs the conversion pipeline for an already-converted deck\nagainst a new target `templateName`. Returns a new `callback_id`\nto poll.\n"
+        },
+        {
+          "info": {
+            "name": "Read the download URL for a template-conversion",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/download",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ]
+          },
+          "docs": "Returns a signed download URL for the converted deck identified\nby `callback_id`. Counted against the `TC_DOWNLOAD` usage limit.\n"
+        },
+        {
+          "info": {
+            "name": "Create a Comply metrics record on a template-conversion",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/comply-metrics",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Records compliance metrics for a converted deck. The body is\nforwarded to the ComplyMetrics service. Typically invoked via a\n`callback_id + token` URL handed back to the caller after a\nconversion.\n"
+        },
+        {
+          "info": {
+            "name": "Upsert a reaction on a template-conversion",
+            "type": "http"
+          },
+          "http": {
+            "method": "PUT",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/reactions",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Records a like or qualitative feedback against a converted deck.\nWhen `type` is `liked` the `value` must be a boolean; when\n`feedback` the `value` must be a string. Uses PUT (legacy quirk\npreserved from the original endpoint) rather than POST.\n"
+        },
+        {
+          "info": {
+            "name": "Read work-area options for a template-conversion slide",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/work-area-options",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              },
+              {
+                "name": "slide_index",
+                "value": "",
+                "type": "query",
+                "description": "Zero-based slide index."
+              }
+            ]
+          },
+          "docs": "Returns the available work-area adjustment options for the given\nslide of the given conversion job.\n"
+        },
+        {
+          "info": {
+            "name": "Create a work-area adjustment on a template-conversion",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/work-area-adjustments",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Applies a selected work-area adjustment to the given slide of a\nconversion job.\n"
+        },
+        {
+          "info": {
+            "name": "Read layout options for a template-conversion",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/layouts",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              },
+              {
+                "name": "slide_index",
+                "value": "",
+                "type": "query",
+                "description": "Zero-based slide index. If omitted, returns layouts for every slide."
+              }
+            ]
+          },
+          "docs": "Returns the layout options available for the target template\nand, optionally, the input deck's layouts for the given slide.\n"
+        },
+        {
+          "info": {
+            "name": "Create a layout update on a template-conversion",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/layout-updates",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Updates the layout of a slide and re-renders the affected portion\nof the converted deck. Returns a new `callback_id` to poll.\n"
+        },
+        {
+          "info": {
+            "name": "Create a format modification on a template-conversion",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/format-modifications",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Applies a batch of format modifications (title-formatting,\nbody-formatting) to a converted deck and re-renders the affected\nslides. Returns a new `callback_id` to poll.\n"
+        },
+        {
+          "info": {
+            "name": "Read available format-modification settings for a template-conversion",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v1/template-conversions/:callback_id/format-modifications/settings",
+            "params": [
+              {
+                "name": "callback_id",
+                "value": "",
+                "type": "path",
+                "description": "Server-issued opaque identifier returned by an async kick-off endpoint. Used to poll status or fetch derived artefacts."
+              }
+            ]
+          },
+          "docs": "Returns the available formatting controls (font sizes, weight,\nalignment) that may be applied to title/body text in a converted\ndeck.\n"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

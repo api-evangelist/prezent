@@ -1,0 +1,161 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Prezent Platform Audiences Webhooks API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "Webhooks",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "List webhook subscriptions",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v1/webhook-subscriptions",
+            "params": [
+              {
+                "name": "limit",
+                "value": "",
+                "type": "query"
+              },
+              {
+                "name": "cursor",
+                "value": "",
+                "type": "query"
+              }
+            ]
+          },
+          "docs": "Returns the subscriptions owned by the calling API key. Excludes\nsoft-deleted rows. Use the standard cursor-pagination parameters\n— see [Developer Guide → Pagination](/docs/developer-guide#pagination).\n"
+        },
+        {
+          "info": {
+            "name": "Create a webhook subscription",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/webhook-subscriptions",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Registers a new HTTPS endpoint to receive signed delivery\ncallbacks for the listed event types. Returns the HMAC `secret`\nONCE — store it securely. Subsequent reads only expose the\n`secret_prefix`.\n"
+        },
+        {
+          "info": {
+            "name": "Read a webhook subscription",
+            "type": "http"
+          },
+          "http": {
+            "method": "GET",
+            "url": "https://api.prezent.ai/api/v1/webhook-subscriptions/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+              }
+            ]
+          },
+          "docs": "Returns one subscription. `secret_prefix` (the first 6 chars of\nthe HMAC secret) is exposed for human disambiguation; the full\nsecret is never returned by a read.\n"
+        },
+        {
+          "info": {
+            "name": "Update a webhook subscription",
+            "type": "http"
+          },
+          "http": {
+            "method": "PATCH",
+            "url": "https://api.prezent.ai/api/v1/webhook-subscriptions/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+              }
+            ],
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Partial update. Any combination of `url`, `events`, `description`,\nor `status` may be supplied. Changes to `url` are re-validated\nagainst the SSRF / scheme / port rules. Setting `status` to\n`\"active\"` re-enables an auto-disabled subscription.\n"
+        },
+        {
+          "info": {
+            "name": "Delete a webhook subscription",
+            "type": "http"
+          },
+          "http": {
+            "method": "DELETE",
+            "url": "https://api.prezent.ai/api/v1/webhook-subscriptions/:id",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+              }
+            ]
+          },
+          "docs": "Soft-deletes the subscription. The `id` is permanently retired\n— no future deliveries will be attempted, and the row is\nexcluded from list responses.\n"
+        },
+        {
+          "info": {
+            "name": "Rotate the HMAC secret for a subscription",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/webhook-subscriptions/:id/rotate-secret",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+              }
+            ]
+          },
+          "docs": "Generates a new HMAC `secret` and invalidates the old one\nimmediately. Returns the new secret ONCE — store it before\nresponding to the caller. There is no grace window during which\nboth secrets verify; if you need an overlap, stand up a second\nsubscription on a distinct path, switch over, then delete the\nold one.\n"
+        },
+        {
+          "info": {
+            "name": "Send a test delivery to a subscription",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/webhook-subscriptions/:id/test",
+            "params": [
+              {
+                "name": "id",
+                "value": "",
+                "type": "path",
+                "description": "The public subscription id returned by `POST /api/v1/webhook-subscriptions` — shaped `whsub_<32 hex chars>`."
+              }
+            ]
+          },
+          "docs": "Immediately POSTs a synthetic `webhook.test` event to the\nsubscription's URL (signed with the current secret, 5s timeout,\nno retries) and returns the response status + body verbatim.\nUse this to verify the receiver's signature-verification path\nbefore real traffic flows.\n"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}

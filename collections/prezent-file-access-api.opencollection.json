@@ -1,0 +1,39 @@
+{
+  "opencollection": "1.0.0",
+  "info": {
+    "name": "Prezent Platform Audiences File Access API",
+    "version": "1.0.0"
+  },
+  "request": {
+    "auth": {
+      "type": "bearer",
+      "token": "{{bearerToken}}"
+    }
+  },
+  "items": [
+    {
+      "info": {
+        "name": "File Access",
+        "type": "folder"
+      },
+      "items": [
+        {
+          "info": {
+            "name": "Create signed access tokens for stored files",
+            "type": "http"
+          },
+          "http": {
+            "method": "POST",
+            "url": "https://api.prezent.ai/api/v1/access-tokens",
+            "body": {
+              "type": "json",
+              "data": "{}"
+            }
+          },
+          "docs": "Returns short-lived per-file access tokens that allow the caller\nto download the referenced files from the underlying storage\nbackend.\n"
+        }
+      ]
+    }
+  ],
+  "bundled": true
+}
