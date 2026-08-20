@@ -170,6 +170,8 @@ apis:
   humanURL: https://docs.prezent.ai/
   baseURL: https://api.prezent.ai
   tags:
+  - Webhook
+  tags_raw:
   - Webhooks
   properties:
   - type: OpenAPI
