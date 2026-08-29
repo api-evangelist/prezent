@@ -1,15 +1,7 @@
 {
   "provider": "prezent",
   "sources": [
-    "prezent-audiences-api-openapi.yml",
-    "prezent-autogenerator-api-openapi.yml",
-    "prezent-file-access-api-openapi.yml",
-    "prezent-health-api-openapi.yml",
-    "prezent-streaming-api-openapi.yml",
-    "prezent-template-converter-api-openapi.yml",
-    "prezent-themes-api-openapi.yml",
-    "prezent-upload-api-openapi.yml",
-    "prezent-webhooks-api-openapi.yml"
+    "_original/prezent-openapi-original.yml"
   ],
   "outputs": [
     "prezent-audiences-api-openapi.yml",
@@ -25,6 +17,19 @@
   "archived": [],
   "errors": [],
   "warnings": [],
-  "notes": [],
-  "skipped": []
+  "notes": [
+    "sourced from openapi/_original/ (1 archived document(s)); previously refined output at the top level was skipped rather than re-split",
+    "prezent-openapi-original.yml: upgraded openapi 3.1.0 -> OpenAPI 3.2.0"
+  ],
+  "skipped": [
+    "prezent-audiences-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "prezent-autogenerator-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "prezent-file-access-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "prezent-health-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "prezent-streaming-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "prezent-template-converter-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "prezent-themes-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "prezent-upload-api-openapi.yml: previously refined output, superseded by openapi/_original/",
+    "prezent-webhooks-api-openapi.yml: previously refined output, superseded by openapi/_original/"
+  ]
 }
