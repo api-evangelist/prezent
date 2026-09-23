@@ -1,0 +1,32 @@
+# Front Door AI Index — prezent — 2026-09-17
+# AI vocabulary counted on the provider's root page. Generated; do not edit.
+# `score` is null unless ownership is `own` — see front_door_ai.py.
+front_door_ai:
+  slug: prezent
+  lexicon_version: '1.0'
+  probed_at: '2026-09-17'
+  host: prezent.ai
+  final_host: www.prezent.ai
+  ownership: own
+  owner: prezent
+  shares_host_with: null
+  inherited_from: null
+  verdict: scored
+  score: 34
+  host_score: 34
+  density: 26.15
+  words: 1300
+  tiers:
+    agentic: 8
+    core: 26
+    model: 0
+  ambiguous: 9
+  top_terms:
+    AI: 25
+    intelligence: 5
+    AI agent: 4
+    agent: 4
+    prompts: 2
+    agentic: 1
+    artificial intelligence: 1
+    copilot: 1
