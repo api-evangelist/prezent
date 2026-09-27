@@ -158,7 +158,267 @@ paths:
         '504':
           $ref: '#/components/responses/GatewayTimeout'
 components:
+  responses:
+    RateLimited:
+      description: "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n"
+      headers:
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/XRateLimitLimit'
+        X-RateLimit-Remaining:
+          $ref: '#/components/headers/XRateLimitRemaining'
+        X-RateLimit-Reset:
+          $ref: '#/components/headers/XRateLimitReset'
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: RATE_LIMIT_EXCEEDED
+              message: Rate limit exceeded for this category. Try again later.
+              details:
+                category: auto_generator
+                retry_after_seconds: 12
+    Unauthorized:
+      description: 'Caller did not present a valid Bearer token, or the token has
+
+        expired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,
+
+        `EXPIRED_API_KEY`.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: INVALID_API_KEY
+              message: API key not found or not authorized.
+              details: {}
+    BadRequest:
+      description: Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: BAD_REQUEST
+              message: Bad request.
+              details: {}
+    NotFound:
+      description: 'Requested endpoint or resource does not exist. `error.code` is
+
+        one of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: RESOURCE_NOT_FOUND
+              message: The requested resource was not found.
+              details: {}
+    Forbidden:
+      description: Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: FORBIDDEN
+              message: Access to the resource is forbidden.
+              details: {}
+    GatewayTimeout:
+      description: A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: GATEWAY_TIMEOUT
+              message: Gateway timeout.
+              details: {}
+    InternalServerError:
+      description: Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: INTERNAL_SERVER_ERROR
+              message: An unexpected server error occurred.
+              details: {}
+    ServiceUnavailable:
+      description: Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: SERVICE_UNAVAILABLE
+              message: Service is temporarily unavailable.
+              details: {}
+    UnprocessableEntity:
+      description: 'Request was well-formed but failed semantic validation.
+
+        `error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: INVALID_INPUT
+              message: Invalid input provided.
+              details: {}
+  headers:
+    RetryAfter:
+      description: Number of seconds the client should wait before retrying.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    XRateLimitReset:
+      description: Unix timestamp (seconds) when the current rate-limit window resets.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    XRateLimitLimit:
+      description: 'The configured request limit for the rate-limit category
+
+        (requests per 60-second window) that applied to this call.
+
+        The applicable category is the operation''s `x-rate-limit-category`.
+
+        Returned on every response (success and 429) so clients can
+
+        self-throttle. See the Rate limits guide for the default
+
+        per-category numbers.
+
+        '
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    XRateLimitRemaining:
+      description: 'Approximate number of requests remaining in the current
+
+        60-second window for this caller and category.
+
+        '
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
   schemas:
+    AudiencesListResponse:
+      description: Response body for `GET /api/v1/audiences` and `POST /api/v1/audiences/search`. `result` and `items` are the same array of audience profiles (`items` is the pagination alias).
+      type: object
+      additionalProperties: true
+      required:
+      - result
+      properties:
+        success:
+          type: boolean
+          description: Always `true` on success.
+        result:
+          type: array
+          description: Audience profiles.
+          items:
+            type: object
+            additionalProperties: true
+            properties:
+              id:
+                type: string
+                description: Audience identifier.
+              name:
+                type: string
+                description: Audience name.
+        items:
+          type: array
+          description: Same audience profiles as `result` (present when paginating).
+          items:
+            type: object
+            additionalProperties: true
+        next_cursor:
+          type:
+          - string
+          - 'null'
+          description: Opaque cursor for the next page, or `null` on the last page. Pagination is opt-in — omit `limit`/`cursor` to receive the full list.
+    ErrorEnvelope:
+      type: object
+      description: 'Standard error envelope returned by every documented endpoint
+
+        (both in-Lambda and gateway-level errors). Additional legacy
+
+        keys may appear alongside `success`/`data`/`error` for
+
+        backwards compatibility.
+
+        '
+      required:
+      - success
+      - data
+      - error
+      properties:
+        success:
+          type: boolean
+          const: false
+          description: Always `false` on error.
+        data:
+          type:
+          - object
+          - 'null'
+          description: Always `null` on error.
+        error:
+          type: object
+          required:
+          - code
+          - message
+          description: Error description.
+          properties:
+            code:
+              $ref: '#/components/schemas/ErrorCode'
+            message:
+              type: string
+              description: Human-readable error description (English).
+            details:
+              type: object
+              description: Optional structured details (validation failures, downstream-service info, etc.).
+              additionalProperties: true
+      additionalProperties: true
     ErrorCode:
       type: string
       description: 'Stable identifier for an error condition. Codes never change
@@ -204,48 +464,6 @@ components:
       - INTERNAL_SERVER_ERROR
       - SERVICE_UNAVAILABLE
       - GATEWAY_TIMEOUT
-    ErrorEnvelope:
-      type: object
-      description: 'Standard error envelope returned by every documented endpoint
-
-        (both in-Lambda and gateway-level errors). Additional legacy
-
-        keys may appear alongside `success`/`data`/`error` for
-
-        backwards compatibility.
-
-        '
-      required:
-      - success
-      - data
-      - error
-      properties:
-        success:
-          type: boolean
-          const: false
-          description: Always `false` on error.
-        data:
-          type:
-          - object
-          - 'null'
-          description: Always `null` on error.
-        error:
-          type: object
-          required:
-          - code
-          - message
-          description: Error description.
-          properties:
-            code:
-              $ref: '#/components/schemas/ErrorCode'
-            message:
-              type: string
-              description: Human-readable error description (English).
-            details:
-              type: object
-              description: Optional structured details (validation failures, downstream-service info, etc.).
-              additionalProperties: true
-      additionalProperties: true
     AudiencesSearchRequest:
       type: object
       description: Request body for `POST /api/v1/audiences/search`.
@@ -282,224 +500,6 @@ components:
           default: 15
           description: Maximum number of results.
       additionalProperties: true
-    AudiencesListResponse:
-      description: Response body for `GET /api/v1/audiences` and `POST /api/v1/audiences/search`. `result` and `items` are the same array of audience profiles (`items` is the pagination alias).
-      type: object
-      additionalProperties: true
-      required:
-      - result
-      properties:
-        success:
-          type: boolean
-          description: Always `true` on success.
-        result:
-          type: array
-          description: Audience profiles.
-          items:
-            type: object
-            additionalProperties: true
-            properties:
-              id:
-                type: string
-                description: Audience identifier.
-              name:
-                type: string
-                description: Audience name.
-        items:
-          type: array
-          description: Same audience profiles as `result` (present when paginating).
-          items:
-            type: object
-            additionalProperties: true
-        next_cursor:
-          type:
-          - string
-          - 'null'
-          description: Opaque cursor for the next page, or `null` on the last page. Pagination is opt-in — omit `limit`/`cursor` to receive the full list.
-  responses:
-    BadRequest:
-      description: Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: BAD_REQUEST
-              message: Bad request.
-              details: {}
-    InternalServerError:
-      description: Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: INTERNAL_SERVER_ERROR
-              message: An unexpected server error occurred.
-              details: {}
-    UnprocessableEntity:
-      description: 'Request was well-formed but failed semantic validation.
-
-        `error.code` is one of `INVALID_INPUT`, `UNPROCESSABLE_ENTITY`.
-
-        '
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: INVALID_INPUT
-              message: Invalid input provided.
-              details: {}
-    NotFound:
-      description: 'Requested endpoint or resource does not exist. `error.code` is
-
-        one of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.
-
-        '
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: RESOURCE_NOT_FOUND
-              message: The requested resource was not found.
-              details: {}
-    RateLimited:
-      description: "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n"
-      headers:
-        X-RateLimit-Limit:
-          $ref: '#/components/headers/XRateLimitLimit'
-        X-RateLimit-Remaining:
-          $ref: '#/components/headers/XRateLimitRemaining'
-        X-RateLimit-Reset:
-          $ref: '#/components/headers/XRateLimitReset'
-        Retry-After:
-          $ref: '#/components/headers/RetryAfter'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: RATE_LIMIT_EXCEEDED
-              message: Rate limit exceeded for this category. Try again later.
-              details:
-                category: auto_generator
-                retry_after_seconds: 12
-    Forbidden:
-      description: Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: FORBIDDEN
-              message: Access to the resource is forbidden.
-              details: {}
-    Unauthorized:
-      description: 'Caller did not present a valid Bearer token, or the token has
-
-        expired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,
-
-        `EXPIRED_API_KEY`.
-
-        '
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: INVALID_API_KEY
-              message: API key not found or not authorized.
-              details: {}
-    GatewayTimeout:
-      description: A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: GATEWAY_TIMEOUT
-              message: Gateway timeout.
-              details: {}
-    ServiceUnavailable:
-      description: Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: SERVICE_UNAVAILABLE
-              message: Service is temporarily unavailable.
-              details: {}
-  headers:
-    XRateLimitLimit:
-      description: 'The configured request limit for the rate-limit category
-
-        (requests per 60-second window) that applied to this call.
-
-        The applicable category is the operation''s `x-rate-limit-category`.
-
-        Returned on every response (success and 429) so clients can
-
-        self-throttle. See the Rate limits guide for the default
-
-        per-category numbers.
-
-        '
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
-    XRateLimitRemaining:
-      description: 'Approximate number of requests remaining in the current
-
-        60-second window for this caller and category.
-
-        '
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
-    RetryAfter:
-      description: Number of seconds the client should wait before retrying.
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
-    XRateLimitReset:
-      description: Unix timestamp (seconds) when the current rate-limit window resets.
-      schema:
-        type: integer
-        format: int64
-        minimum: 0
   securitySchemes:
     BearerAuth:
       type: http

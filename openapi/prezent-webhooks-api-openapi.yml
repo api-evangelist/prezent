@@ -409,133 +409,19 @@ webhooks:
           description: Acknowledged — any 2xx within 10 seconds.
 components:
   schemas:
-    WebhookSubscriptionUpdateRequest:
-      type: object
-      description: Partial update. Any combination of fields may be supplied.
-      properties:
-        url:
-          type: string
-          format: uri
-        events:
-          type: array
-          items:
-            $ref: '#/components/schemas/WebhookEventType'
-          minItems: 1
-        description:
-          type: string
-          nullable: true
-        status:
-          $ref: '#/components/schemas/WebhookSubscriptionStatus'
-      additionalProperties: false
-    WebhookSubscriptionReadResponse:
-      allOf:
-      - $ref: '#/components/schemas/SuccessEnvelope'
-      - type: object
-        properties:
-          data:
-            $ref: '#/components/schemas/WebhookSubscription'
-    WebhookSubscriptionStatus:
+    WebhookEventType:
       type: string
-      enum:
-      - active
-      - disabled
-      description: '`active` subscriptions receive deliveries. `disabled`
+      description: 'Catalog of event types emitted by Prezent. New types may be
 
-        subscriptions are skipped at dispatch time — either explicitly
-
-        set by the customer or set by Prezent''s auto-disable rule after
-
-        50 consecutive delivery failures. PATCH `status: active` to
-
-        re-enable.
+        added without notice; clients should ignore unknown values.
 
         '
-    WebhookSubscriptionTestResponse:
-      allOf:
-      - $ref: '#/components/schemas/SuccessEnvelope'
-      - type: object
-        properties:
-          data:
-            type: object
-            required:
-            - subscription_id
-            - event
-            - delivery
-            properties:
-              subscription_id:
-                type: string
-                example: whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c
-              event:
-                $ref: '#/components/schemas/WebhookEvent'
-              delivery:
-                type: object
-                required:
-                - ok
-                - status
-                - delivery_id
-                properties:
-                  ok:
-                    type: boolean
-                    description: True if the receiver returned a 2xx.
-                  status:
-                    type: integer
-                    description: HTTP status code from the receiver (0 on network error / timeout).
-                    example: 200
-                  error:
-                    type: string
-                    nullable: true
-                    description: Network error code (`timeout`, `ECONNREFUSED`, etc.). `null` on success.
-                  response_body_preview:
-                    type: string
-                    description: First 8 KiB of the receiver's response body, for debugging.
-                  delivery_id:
-                    type: string
-                    pattern: ^whdl_[a-f0-9]{24}$
-                    description: Internal delivery id. Also sent to the receiver in the `X-Prezent-Delivery` header.
-    WebhookSubscriptionListResponse:
-      allOf:
-      - $ref: '#/components/schemas/SuccessEnvelope'
-      - type: object
-        properties:
-          data:
-            type: object
-            required:
-            - items
-            properties:
-              items:
-                type: array
-                items:
-                  $ref: '#/components/schemas/WebhookSubscription'
-              next_cursor:
-                type: string
-                nullable: true
-                description: Pass to the next call's `cursor` query param. `null` when no more pages.
-    WebhookSubscriptionRotateResponse:
-      allOf:
-      - $ref: '#/components/schemas/SuccessEnvelope'
-      - type: object
-        properties:
-          data:
-            type: object
-            required:
-            - id
-            - secret
-            - secret_prefix
-            - rotated_at
-            properties:
-              id:
-                type: string
-                example: whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c
-              secret:
-                type: string
-                description: The freshly-issued HMAC secret. Stored nowhere by Prezent after this response — capture it before forwarding.
-                example: whsec_NewlyGeneratedSecretMaterial
-              secret_prefix:
-                type: string
-                example: whsec_
-              rotated_at:
-                type: string
-                format: date-time
+      enum:
+      - autogeneration.completed
+      - autogeneration.failed
+      - template_conversion.completed
+      - template_conversion.failed
+      - webhook.test
     WebhookSubscriptionDeleteResponse:
       allOf:
       - $ref: '#/components/schemas/SuccessEnvelope'
@@ -553,49 +439,37 @@ components:
               deleted:
                 type: boolean
                 const: true
-    WebhookEventType:
+    WebhookSubscriptionStatus:
       type: string
-      description: 'Catalog of event types emitted by Prezent. New types may be
+      enum:
+      - active
+      - disabled
+      description: '`active` subscriptions receive deliveries. `disabled`
 
-        added without notice; clients should ignore unknown values.
+        subscriptions are skipped at dispatch time — either explicitly
+
+        set by the customer or set by Prezent''s auto-disable rule after
+
+        50 consecutive delivery failures. PATCH `status: active` to
+
+        re-enable.
 
         '
-      enum:
-      - autogeneration.completed
-      - autogeneration.failed
-      - template_conversion.completed
-      - template_conversion.failed
-      - webhook.test
-    WebhookSubscriptionCreateRequest:
+    WebhookSubscriptionUpdateRequest:
       type: object
-      required:
-      - url
+      description: Partial update. Any combination of fields may be supplied.
       properties:
         url:
           type: string
           format: uri
-          description: 'HTTPS endpoint to receive deliveries. Must use `https://`,
-
-            resolve to a public IP, and not use a disallowed port. See
-
-            the [Webhooks guide](/docs/webhooks#url-requirements).
-
-            '
-          example: https://hooks.example.com/prezent
         events:
           type: array
-          description: Event types to subscribe to. Defaults to `["*"]`.
           items:
             $ref: '#/components/schemas/WebhookEventType'
-          default:
-          - '*'
-          example:
-          - autogeneration.completed
-          - autogeneration.failed
+          minItems: 1
         description:
           type: string
           nullable: true
-          example: Push completions into our deal-room worker.
         status:
           $ref: '#/components/schemas/WebhookSubscriptionStatus'
       additionalProperties: false
@@ -676,6 +550,112 @@ components:
 
             '
       additionalProperties: true
+    SuccessEnvelope:
+      type: object
+      description: 'Standard success envelope. Endpoint-specific schemas extend this
+
+        and constrain the `data` property to their concrete shape.
+
+        Additional legacy keys (`status`, `log`, …) may appear alongside
+
+        `success`/`data` for backwards compatibility, and some legacy
+
+        handlers omit `success`, so it is not marked required.
+
+        '
+      required:
+      - data
+      properties:
+        success:
+          type: boolean
+          description: '`true` on success (omitted by some legacy handlers).'
+        data:
+          type: object
+          description: Endpoint-specific payload.
+      additionalProperties: true
+    WebhookSubscriptionCreateResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            allOf:
+            - $ref: '#/components/schemas/WebhookSubscription'
+            - type: object
+              required:
+              - secret
+              properties:
+                secret:
+                  type: string
+                  description: 'The raw HMAC secret. Returned ONCE on this
+
+                    endpoint and on `/rotate-secret`. Store it
+
+                    immediately — subsequent reads expose only
+
+                    `secret_prefix`.
+
+                    '
+                  example: whsec_4mZkV8t9oFp1qR3sT7uW9xY2zA5bCdEfGhI
+    WebhookSubscriptionRotateResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            required:
+            - id
+            - secret
+            - secret_prefix
+            - rotated_at
+            properties:
+              id:
+                type: string
+                example: whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c
+              secret:
+                type: string
+                description: The freshly-issued HMAC secret. Stored nowhere by Prezent after this response — capture it before forwarding.
+                example: whsec_NewlyGeneratedSecretMaterial
+              secret_prefix:
+                type: string
+                example: whsec_
+              rotated_at:
+                type: string
+                format: date-time
+    WebhookSubscriptionCreateRequest:
+      type: object
+      required:
+      - url
+      properties:
+        url:
+          type: string
+          format: uri
+          description: 'HTTPS endpoint to receive deliveries. Must use `https://`,
+
+            resolve to a public IP, and not use a disallowed port. See
+
+            the [Webhooks guide](/docs/webhooks#url-requirements).
+
+            '
+          example: https://hooks.example.com/prezent
+        events:
+          type: array
+          description: Event types to subscribe to. Defaults to `["*"]`.
+          items:
+            $ref: '#/components/schemas/WebhookEventType'
+          default:
+          - '*'
+          example:
+          - autogeneration.completed
+          - autogeneration.failed
+        description:
+          type: string
+          nullable: true
+          example: Push completions into our deal-room worker.
+        status:
+          $ref: '#/components/schemas/WebhookSubscriptionStatus'
+      additionalProperties: false
     WebhookEvent:
       type: object
       description: 'Payload **POSTed to your subscription URL**. This is NOT the
@@ -722,6 +702,115 @@ components:
 
             '
           additionalProperties: true
+    ErrorEnvelope:
+      type: object
+      description: 'Standard error envelope returned by every documented endpoint
+
+        (both in-Lambda and gateway-level errors). Additional legacy
+
+        keys may appear alongside `success`/`data`/`error` for
+
+        backwards compatibility.
+
+        '
+      required:
+      - success
+      - data
+      - error
+      properties:
+        success:
+          type: boolean
+          const: false
+          description: Always `false` on error.
+        data:
+          type:
+          - object
+          - 'null'
+          description: Always `null` on error.
+        error:
+          type: object
+          required:
+          - code
+          - message
+          description: Error description.
+          properties:
+            code:
+              $ref: '#/components/schemas/ErrorCode'
+            message:
+              type: string
+              description: Human-readable error description (English).
+            details:
+              type: object
+              description: Optional structured details (validation failures, downstream-service info, etc.).
+              additionalProperties: true
+      additionalProperties: true
+    WebhookSubscriptionReadResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            $ref: '#/components/schemas/WebhookSubscription'
+    WebhookSubscriptionTestResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            required:
+            - subscription_id
+            - event
+            - delivery
+            properties:
+              subscription_id:
+                type: string
+                example: whsub_3f7a9b1c8d2e4f5a6b7c8d9e0f1a2b3c
+              event:
+                $ref: '#/components/schemas/WebhookEvent'
+              delivery:
+                type: object
+                required:
+                - ok
+                - status
+                - delivery_id
+                properties:
+                  ok:
+                    type: boolean
+                    description: True if the receiver returned a 2xx.
+                  status:
+                    type: integer
+                    description: HTTP status code from the receiver (0 on network error / timeout).
+                    example: 200
+                  error:
+                    type: string
+                    nullable: true
+                    description: Network error code (`timeout`, `ECONNREFUSED`, etc.). `null` on success.
+                  response_body_preview:
+                    type: string
+                    description: First 8 KiB of the receiver's response body, for debugging.
+                  delivery_id:
+                    type: string
+                    pattern: ^whdl_[a-f0-9]{24}$
+                    description: Internal delivery id. Also sent to the receiver in the `X-Prezent-Delivery` header.
+    WebhookSubscriptionListResponse:
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            required:
+            - items
+            properties:
+              items:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WebhookSubscription'
+              next_cursor:
+                type: string
+                nullable: true
+                description: Pass to the next call's `cursor` query param. `null` when no more pages.
     ErrorCode:
       type: string
       description: 'Stable identifier for an error condition. Codes never change
@@ -767,98 +856,54 @@ components:
       - INTERNAL_SERVER_ERROR
       - SERVICE_UNAVAILABLE
       - GATEWAY_TIMEOUT
-    ErrorEnvelope:
-      type: object
-      description: 'Standard error envelope returned by every documented endpoint
+  headers:
+    XRateLimitRemaining:
+      description: 'Approximate number of requests remaining in the current
 
-        (both in-Lambda and gateway-level errors). Additional legacy
-
-        keys may appear alongside `success`/`data`/`error` for
-
-        backwards compatibility.
+        60-second window for this caller and category.
 
         '
-      required:
-      - success
-      - data
-      - error
-      properties:
-        success:
-          type: boolean
-          const: false
-          description: Always `false` on error.
-        data:
-          type:
-          - object
-          - 'null'
-          description: Always `null` on error.
-        error:
-          type: object
-          required:
-          - code
-          - message
-          description: Error description.
-          properties:
-            code:
-              $ref: '#/components/schemas/ErrorCode'
-            message:
-              type: string
-              description: Human-readable error description (English).
-            details:
-              type: object
-              description: Optional structured details (validation failures, downstream-service info, etc.).
-              additionalProperties: true
-      additionalProperties: true
-    WebhookSubscriptionCreateResponse:
-      allOf:
-      - $ref: '#/components/schemas/SuccessEnvelope'
-      - type: object
-        properties:
-          data:
-            allOf:
-            - $ref: '#/components/schemas/WebhookSubscription'
-            - type: object
-              required:
-              - secret
-              properties:
-                secret:
-                  type: string
-                  description: 'The raw HMAC secret. Returned ONCE on this
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    XRateLimitLimit:
+      description: 'The configured request limit for the rate-limit category
 
-                    endpoint and on `/rotate-secret`. Store it
+        (requests per 60-second window) that applied to this call.
 
-                    immediately — subsequent reads expose only
+        The applicable category is the operation''s `x-rate-limit-category`.
 
-                    `secret_prefix`.
+        Returned on every response (success and 429) so clients can
 
-                    '
-                  example: whsec_4mZkV8t9oFp1qR3sT7uW9xY2zA5bCdEfGhI
-    SuccessEnvelope:
-      type: object
-      description: 'Standard success envelope. Endpoint-specific schemas extend this
+        self-throttle. See the Rate limits guide for the default
 
-        and constrain the `data` property to their concrete shape.
-
-        Additional legacy keys (`status`, `log`, …) may appear alongside
-
-        `success`/`data` for backwards compatibility, and some legacy
-
-        handlers omit `success`, so it is not marked required.
+        per-category numbers.
 
         '
-      required:
-      - data
-      properties:
-        success:
-          type: boolean
-          description: '`true` on success (omitted by some legacy handlers).'
-        data:
-          type: object
-          description: Endpoint-specific payload.
-      additionalProperties: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    RetryAfter:
+      description: Number of seconds the client should wait before retrying.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    XRateLimitReset:
+      description: Unix timestamp (seconds) when the current rate-limit window resets.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
   responses:
-    InternalServerError:
-      description: Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.
+    NotFound:
+      description: 'Requested endpoint or resource does not exist. `error.code` is
+
+        one of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.
+
+        '
       content:
         application/json:
           schema:
@@ -867,8 +912,40 @@ components:
             success: false
             data: null
             error:
-              code: INTERNAL_SERVER_ERROR
-              message: An unexpected server error occurred.
+              code: RESOURCE_NOT_FOUND
+              message: The requested resource was not found.
+              details: {}
+    Forbidden:
+      description: Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: FORBIDDEN
+              message: Access to the resource is forbidden.
+              details: {}
+    Unauthorized:
+      description: 'Caller did not present a valid Bearer token, or the token has
+
+        expired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,
+
+        `EXPIRED_API_KEY`.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: INVALID_API_KEY
+              message: API key not found or not authorized.
               details: {}
     GatewayTimeout:
       description: A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.
@@ -882,56 +959,6 @@ components:
             error:
               code: GATEWAY_TIMEOUT
               message: Gateway timeout.
-              details: {}
-    BadRequest:
-      description: Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: BAD_REQUEST
-              message: Bad request.
-              details: {}
-    RateLimited:
-      description: "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n"
-      headers:
-        X-RateLimit-Limit:
-          $ref: '#/components/headers/XRateLimitLimit'
-        X-RateLimit-Remaining:
-          $ref: '#/components/headers/XRateLimitRemaining'
-        X-RateLimit-Reset:
-          $ref: '#/components/headers/XRateLimitReset'
-        Retry-After:
-          $ref: '#/components/headers/RetryAfter'
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: RATE_LIMIT_EXCEEDED
-              message: Rate limit exceeded for this category. Try again later.
-              details:
-                category: auto_generator
-                retry_after_seconds: 12
-    Forbidden:
-      description: Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: FORBIDDEN
-              message: Access to the resource is forbidden.
               details: {}
     ServiceUnavailable:
       description: Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.
@@ -963,14 +990,8 @@ components:
               code: INVALID_INPUT
               message: Invalid input provided.
               details: {}
-    Unauthorized:
-      description: 'Caller did not present a valid Bearer token, or the token has
-
-        expired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,
-
-        `EXPIRED_API_KEY`.
-
-        '
+    BadRequest:
+      description: Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.
       content:
         application/json:
           schema:
@@ -979,15 +1000,11 @@ components:
             success: false
             data: null
             error:
-              code: INVALID_API_KEY
-              message: API key not found or not authorized.
+              code: BAD_REQUEST
+              message: Bad request.
               details: {}
-    NotFound:
-      description: 'Requested endpoint or resource does not exist. `error.code` is
-
-        one of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.
-
-        '
+    InternalServerError:
+      description: Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.
       content:
         application/json:
           schema:
@@ -996,50 +1013,33 @@ components:
             success: false
             data: null
             error:
-              code: RESOURCE_NOT_FOUND
-              message: The requested resource was not found.
+              code: INTERNAL_SERVER_ERROR
+              message: An unexpected server error occurred.
               details: {}
-  headers:
-    XRateLimitRemaining:
-      description: 'Approximate number of requests remaining in the current
-
-        60-second window for this caller and category.
-
-        '
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
-    XRateLimitReset:
-      description: Unix timestamp (seconds) when the current rate-limit window resets.
-      schema:
-        type: integer
-        format: int64
-        minimum: 0
-    XRateLimitLimit:
-      description: 'The configured request limit for the rate-limit category
-
-        (requests per 60-second window) that applied to this call.
-
-        The applicable category is the operation''s `x-rate-limit-category`.
-
-        Returned on every response (success and 429) so clients can
-
-        self-throttle. See the Rate limits guide for the default
-
-        per-category numbers.
-
-        '
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
-    RetryAfter:
-      description: Number of seconds the client should wait before retrying.
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
+    RateLimited:
+      description: "Rate limit, usage limit, or gateway-level throttle exceeded.\n`error.code` is `TOO_MANY_REQUESTS` (gateway throttle),\n`RATE_LIMIT_EXCEEDED` (per-category), or `USAGE_LIMIT_EXCEEDED`\n(annual quota).\n\nDefault limits (all configurable per company/key):\n- Gateway throttle (per API key) → `TOO_MANY_REQUESTS`: 10 requests/second\n  sustained, 5 burst, 1,000 requests/day.\n- Per-company, per-category sliding 60-second window →\n  `RATE_LIMIT_EXCEEDED`. The applicable category is given by each\n  operation's `x-rate-limit-category`.\n- Annual usage quota → `USAGE_LIMIT_EXCEEDED`: 50,000 slide\n  generations/year and 1,000,000 presentation downloads/year.\n\n`X-RateLimit-Limit`/`X-RateLimit-Remaining`/`X-RateLimit-Reset` are\nreturned on successful (2xx) responses from rate-limited endpoints\nand, with `Retry-After`, on the per-category `RATE_LIMIT_EXCEEDED`\n429 (the headers declared below). The gateway `TOO_MANY_REQUESTS`\nand annual `USAGE_LIMIT_EXCEEDED` responses do not carry them. Read\n`X-RateLimit-Remaining` to self-throttle and honour `Retry-After` on\na 429.\n"
+      headers:
+        X-RateLimit-Limit:
+          $ref: '#/components/headers/XRateLimitLimit'
+        X-RateLimit-Remaining:
+          $ref: '#/components/headers/XRateLimitRemaining'
+        X-RateLimit-Reset:
+          $ref: '#/components/headers/XRateLimitReset'
+        Retry-After:
+          $ref: '#/components/headers/RetryAfter'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: RATE_LIMIT_EXCEEDED
+              message: Rate limit exceeded for this category. Try again later.
+              details:
+                category: auto_generator
+                retry_after_seconds: 12
   parameters:
     WebhookSubscriptionIdPath:
       name: id
