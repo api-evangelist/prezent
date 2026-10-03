@@ -84,48 +84,63 @@ paths:
         '504':
           $ref: '#/components/responses/GatewayTimeout'
 components:
-  headers:
-    RetryAfter:
-      description: Number of seconds the client should wait before retrying.
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
-    XRateLimitReset:
-      description: Unix timestamp (seconds) when the current rate-limit window resets.
-      schema:
-        type: integer
-        format: int64
-        minimum: 0
-    XRateLimitLimit:
-      description: 'The configured request limit for the rate-limit category
-
-        (requests per 60-second window) that applied to this call.
-
-        The applicable category is the operation''s `x-rate-limit-category`.
-
-        Returned on every response (success and 429) so clients can
-
-        self-throttle. See the Rate limits guide for the default
-
-        per-category numbers.
-
-        '
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
-    XRateLimitRemaining:
-      description: 'Approximate number of requests remaining in the current
-
-        60-second window for this caller and category.
-
-        '
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
   responses:
+    NotFound:
+      description: 'Requested endpoint or resource does not exist. `error.code` is
+
+        one of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.
+
+        '
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: RESOURCE_NOT_FOUND
+              message: The requested resource was not found.
+              details: {}
+    ServiceUnavailable:
+      description: Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: SERVICE_UNAVAILABLE
+              message: Service is temporarily unavailable.
+              details: {}
+    BadRequest:
+      description: Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: BAD_REQUEST
+              message: Bad request.
+              details: {}
+    GatewayTimeout:
+      description: A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: GATEWAY_TIMEOUT
+              message: Gateway timeout.
+              details: {}
     Unauthorized:
       description: 'Caller did not present a valid Bearer token, or the token has
 
@@ -144,62 +159,6 @@ components:
             error:
               code: INVALID_API_KEY
               message: API key not found or not authorized.
-              details: {}
-    BadRequest:
-      description: Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: BAD_REQUEST
-              message: Bad request.
-              details: {}
-    NotFound:
-      description: 'Requested endpoint or resource does not exist. `error.code` is
-
-        one of `ENDPOINT_NOT_FOUND`, `RESOURCE_NOT_FOUND`, `NOT_FOUND`.
-
-        '
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: RESOURCE_NOT_FOUND
-              message: The requested resource was not found.
-              details: {}
-    Forbidden:
-      description: Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: FORBIDDEN
-              message: Access to the resource is forbidden.
-              details: {}
-    GatewayTimeout:
-      description: A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: GATEWAY_TIMEOUT
-              message: Gateway timeout.
               details: {}
     InternalServerError:
       description: Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.
@@ -238,8 +197,8 @@ components:
               details:
                 category: auto_generator
                 retry_after_seconds: 12
-    ServiceUnavailable:
-      description: Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.
+    Forbidden:
+      description: Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.
       content:
         application/json:
           schema:
@@ -248,10 +207,48 @@ components:
             success: false
             data: null
             error:
-              code: SERVICE_UNAVAILABLE
-              message: Service is temporarily unavailable.
+              code: FORBIDDEN
+              message: Access to the resource is forbidden.
               details: {}
   schemas:
+    StreamSessionCreateResponse:
+      type: object
+      required:
+      - success
+      - data
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          required:
+          - session_id
+          - stream_url
+          - expires_at
+          properties:
+            session_id:
+              type: string
+              description: Same as the `callback_id` you passed in.
+              example: cb_01HZQ3Y7K3D6V0A0CS7HD3
+            stream_url:
+              type: string
+              format: uri
+              description: 'Open with `new EventSource(stream_url)` (or `fetch`
+
+                + ReadableStream). Hostname is environment-dependent
+
+                (e.g. `stream-api.myprezent.com`). The embedded token
+
+                expires at `expires_at`.
+
+                '
+              example: https://stream-api.myprezent.com/v1/streams/cb_01HZQ3Y7K3D6V0A0CS7HD3?token=eyJhbGciOi...
+            expires_at:
+              type: string
+              format: date-time
+              description: When the embedded token stops being accepted. Call this endpoint again to refresh.
+              example: '2026-06-09T10:05:00Z'
     StreamSessionCreateRequest:
       type: object
       required:
@@ -267,48 +264,6 @@ components:
 
             '
           example: cb_01HZQ3Y7K3D6V0A0CS7HD3
-    ErrorEnvelope:
-      type: object
-      description: 'Standard error envelope returned by every documented endpoint
-
-        (both in-Lambda and gateway-level errors). Additional legacy
-
-        keys may appear alongside `success`/`data`/`error` for
-
-        backwards compatibility.
-
-        '
-      required:
-      - success
-      - data
-      - error
-      properties:
-        success:
-          type: boolean
-          const: false
-          description: Always `false` on error.
-        data:
-          type:
-          - object
-          - 'null'
-          description: Always `null` on error.
-        error:
-          type: object
-          required:
-          - code
-          - message
-          description: Error description.
-          properties:
-            code:
-              $ref: '#/components/schemas/ErrorCode'
-            message:
-              type: string
-              description: Human-readable error description (English).
-            details:
-              type: object
-              description: Optional structured details (validation failures, downstream-service info, etc.).
-              additionalProperties: true
-      additionalProperties: true
     ErrorCode:
       type: string
       description: 'Stable identifier for an error condition. Codes never change
@@ -354,44 +309,89 @@ components:
       - INTERNAL_SERVER_ERROR
       - SERVICE_UNAVAILABLE
       - GATEWAY_TIMEOUT
-    StreamSessionCreateResponse:
+    ErrorEnvelope:
       type: object
+      description: 'Standard error envelope returned by every documented endpoint
+
+        (both in-Lambda and gateway-level errors). Additional legacy
+
+        keys may appear alongside `success`/`data`/`error` for
+
+        backwards compatibility.
+
+        '
       required:
       - success
       - data
+      - error
       properties:
         success:
           type: boolean
-          example: true
+          const: false
+          description: Always `false` on error.
         data:
+          type:
+          - object
+          - 'null'
+          description: Always `null` on error.
+        error:
           type: object
           required:
-          - session_id
-          - stream_url
-          - expires_at
+          - code
+          - message
+          description: Error description.
           properties:
-            session_id:
+            code:
+              $ref: '#/components/schemas/ErrorCode'
+            message:
               type: string
-              description: Same as the `callback_id` you passed in.
-              example: cb_01HZQ3Y7K3D6V0A0CS7HD3
-            stream_url:
-              type: string
-              format: uri
-              description: 'Open with `new EventSource(stream_url)` (or `fetch`
+              description: Human-readable error description (English).
+            details:
+              type: object
+              description: Optional structured details (validation failures, downstream-service info, etc.).
+              additionalProperties: true
+      additionalProperties: true
+  headers:
+    XRateLimitLimit:
+      description: 'The configured request limit for the rate-limit category
 
-                + ReadableStream). Hostname is environment-dependent
+        (requests per 60-second window) that applied to this call.
 
-                (e.g. `stream-api.myprezent.com`). The embedded token
+        The applicable category is the operation''s `x-rate-limit-category`.
 
-                expires at `expires_at`.
+        Returned on every response (success and 429) so clients can
 
-                '
-              example: https://stream-api.myprezent.com/v1/streams/cb_01HZQ3Y7K3D6V0A0CS7HD3?token=eyJhbGciOi...
-            expires_at:
-              type: string
-              format: date-time
-              description: When the embedded token stops being accepted. Call this endpoint again to refresh.
-              example: '2026-06-09T10:05:00Z'
+        self-throttle. See the Rate limits guide for the default
+
+        per-category numbers.
+
+        '
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    XRateLimitReset:
+      description: Unix timestamp (seconds) when the current rate-limit window resets.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    RetryAfter:
+      description: Number of seconds the client should wait before retrying.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    XRateLimitRemaining:
+      description: 'Approximate number of requests remaining in the current
+
+        60-second window for this caller and category.
+
+        '
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
   securitySchemes:
     BearerAuth:
       type: http

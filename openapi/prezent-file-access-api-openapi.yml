@@ -77,56 +77,160 @@ paths:
         '504':
           $ref: '#/components/responses/GatewayTimeout'
 components:
-  headers:
-    RetryAfter:
-      description: Number of seconds the client should wait before retrying.
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
-    XRateLimitReset:
-      description: Unix timestamp (seconds) when the current rate-limit window resets.
-      schema:
-        type: integer
-        format: int64
-        minimum: 0
-    XRateLimitLimit:
-      description: 'The configured request limit for the rate-limit category
+  schemas:
+    SuccessEnvelope:
+      type: object
+      description: 'Standard success envelope. Endpoint-specific schemas extend this
 
-        (requests per 60-second window) that applied to this call.
+        and constrain the `data` property to their concrete shape.
 
-        The applicable category is the operation''s `x-rate-limit-category`.
+        Additional legacy keys (`status`, `log`, …) may appear alongside
 
-        Returned on every response (success and 429) so clients can
+        `success`/`data` for backwards compatibility, and some legacy
 
-        self-throttle. See the Rate limits guide for the default
-
-        per-category numbers.
+        handlers omit `success`, so it is not marked required.
 
         '
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
-    XRateLimitRemaining:
-      description: 'Approximate number of requests remaining in the current
+      required:
+      - data
+      properties:
+        success:
+          type: boolean
+          description: '`true` on success (omitted by some legacy handlers).'
+        data:
+          type: object
+          description: Endpoint-specific payload.
+      additionalProperties: true
+    FileAccessRequest:
+      type: object
+      description: Request body for `POST /api/v1/file-access`.
+      required:
+      - filePaths
+      properties:
+        filePaths:
+          type: array
+          description: List of stored file paths to mint tokens for.
+          minItems: 1
+          items:
+            type: string
+        source:
+          type: string
+          enum:
+          - betaimages
+          - magikarp
+          description: Storage backend source.
+      additionalProperties: true
+    ErrorCode:
+      type: string
+      description: 'Stable identifier for an error condition. Codes never change
 
-        60-second window for this caller and category.
+        meaning or HTTP status once published.
 
         '
-      schema:
-        type: integer
-        format: int32
-        minimum: 0
+      enum:
+      - INVALID_API_KEY
+      - EXPIRED_API_KEY
+      - UNAUTHORIZED
+      - FORBIDDEN
+      - ENDPOINT_NOT_FOUND
+      - RESOURCE_NOT_FOUND
+      - NOT_FOUND
+      - METHOD_NOT_ALLOWED
+      - UNSUPPORTED_FILE_TYPE
+      - INVALID_INPUT
+      - UNPROCESSABLE_ENTITY
+      - RATE_LIMIT_EXCEEDED
+      - USAGE_LIMIT_EXCEEDED
+      - TOO_MANY_REQUESTS
+      - THROTTLED
+      - BAD_REQUEST
+      - INVALID_JSON
+      - MISSING_REQUIRED_FIELD
+      - MISSING_QUERY_PARAM
+      - MISSING_CALLBACK_ID
+      - MISSING_SLIDES_ARRAY
+      - MISSING_PROMPT
+      - MISSING_TEMPLATE_ID
+      - MISSING_FILE_CONTENT
+      - MISSING_SHARE_DETAILS
+      - INVALID_TYPE
+      - INVALID_DATA
+      - INVALID_DATA_TYPE
+      - INVALID_PAYLOAD
+      - INVALID_REQUEST
+      - API_REQUEST_FAILED
+      - FILE_UPLOAD_FAILED
+      - MAX_RETRIES_EXCEEDED
+      - EXTERNAL_SERVICE_ERROR
+      - INTERNAL_SERVER_ERROR
+      - SERVICE_UNAVAILABLE
+      - GATEWAY_TIMEOUT
+    ErrorEnvelope:
+      type: object
+      description: 'Standard error envelope returned by every documented endpoint
+
+        (both in-Lambda and gateway-level errors). Additional legacy
+
+        keys may appear alongside `success`/`data`/`error` for
+
+        backwards compatibility.
+
+        '
+      required:
+      - success
+      - data
+      - error
+      properties:
+        success:
+          type: boolean
+          const: false
+          description: Always `false` on error.
+        data:
+          type:
+          - object
+          - 'null'
+          description: Always `null` on error.
+        error:
+          type: object
+          required:
+          - code
+          - message
+          description: Error description.
+          properties:
+            code:
+              $ref: '#/components/schemas/ErrorCode'
+            message:
+              type: string
+              description: Human-readable error description (English).
+            details:
+              type: object
+              description: Optional structured details (validation failures, downstream-service info, etc.).
+              additionalProperties: true
+      additionalProperties: true
+    FileAccessResponse:
+      description: Response body for `POST /api/v1/file-access`.
+      allOf:
+      - $ref: '#/components/schemas/SuccessEnvelope'
+      - type: object
+        properties:
+          data:
+            type: object
+            required:
+            - access_tokens
+            properties:
+              access_tokens:
+                type: object
+                description: Map of `filePath` → signed access token.
+                additionalProperties:
+                  type: string
+                  description: Signed access token for the corresponding file path.
+              message:
+                type: string
+                description: Human-readable confirmation.
+            additionalProperties: true
   responses:
-    Unauthorized:
-      description: 'Caller did not present a valid Bearer token, or the token has
-
-        expired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,
-
-        `EXPIRED_API_KEY`.
-
-        '
+    ServiceUnavailable:
+      description: Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.
       content:
         application/json:
           schema:
@@ -135,21 +239,8 @@ components:
             success: false
             data: null
             error:
-              code: INVALID_API_KEY
-              message: API key not found or not authorized.
-              details: {}
-    BadRequest:
-      description: Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-          example:
-            success: false
-            data: null
-            error:
-              code: BAD_REQUEST
-              message: Bad request.
+              code: SERVICE_UNAVAILABLE
+              message: Service is temporarily unavailable.
               details: {}
     NotFound:
       description: 'Requested endpoint or resource does not exist. `error.code` is
@@ -168,8 +259,8 @@ components:
               code: RESOURCE_NOT_FOUND
               message: The requested resource was not found.
               details: {}
-    Forbidden:
-      description: Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.
+    BadRequest:
+      description: Generic client error. `error.code` is one of `BAD_REQUEST`, `INVALID_JSON`, `MISSING_REQUIRED_FIELD`, `MISSING_QUERY_PARAM`, `MISSING_CALLBACK_ID`, `MISSING_SLIDES_ARRAY`, `MISSING_PROMPT`, `MISSING_TEMPLATE_ID`, `MISSING_FILE_CONTENT`, `MISSING_SHARE_DETAILS`, `INVALID_TYPE`, `INVALID_DATA`, `INVALID_DATA_TYPE`, `INVALID_PAYLOAD`, `INVALID_REQUEST`, `API_REQUEST_FAILED`, or `FILE_UPLOAD_FAILED`.
       content:
         application/json:
           schema:
@@ -178,8 +269,8 @@ components:
             success: false
             data: null
             error:
-              code: FORBIDDEN
-              message: Access to the resource is forbidden.
+              code: BAD_REQUEST
+              message: Bad request.
               details: {}
     GatewayTimeout:
       description: A downstream call timed out. `error.code` is `GATEWAY_TIMEOUT`.
@@ -194,8 +285,14 @@ components:
               code: GATEWAY_TIMEOUT
               message: Gateway timeout.
               details: {}
-    ServiceUnavailable:
-      description: Service is temporarily unavailable (downstream dependency unhealthy). `error.code` is `SERVICE_UNAVAILABLE` or `EXTERNAL_SERVICE_ERROR`.
+    Unauthorized:
+      description: 'Caller did not present a valid Bearer token, or the token has
+
+        expired. `error.code` is one of `UNAUTHORIZED`, `INVALID_API_KEY`,
+
+        `EXPIRED_API_KEY`.
+
+        '
       content:
         application/json:
           schema:
@@ -204,8 +301,8 @@ components:
             success: false
             data: null
             error:
-              code: SERVICE_UNAVAILABLE
-              message: Service is temporarily unavailable.
+              code: INVALID_API_KEY
+              message: API key not found or not authorized.
               details: {}
     InternalServerError:
       description: Unexpected server error. `error.code` is `INTERNAL_SERVER_ERROR`.
@@ -261,157 +358,60 @@ components:
               code: INVALID_INPUT
               message: Invalid input provided.
               details: {}
-  schemas:
-    FileAccessResponse:
-      description: Response body for `POST /api/v1/file-access`.
-      allOf:
-      - $ref: '#/components/schemas/SuccessEnvelope'
-      - type: object
-        properties:
-          data:
-            type: object
-            required:
-            - access_tokens
-            properties:
-              access_tokens:
-                type: object
-                description: Map of `filePath` → signed access token.
-                additionalProperties:
-                  type: string
-                  description: Signed access token for the corresponding file path.
-              message:
-                type: string
-                description: Human-readable confirmation.
-            additionalProperties: true
-    SuccessEnvelope:
-      type: object
-      description: 'Standard success envelope. Endpoint-specific schemas extend this
+    Forbidden:
+      description: Caller is authenticated but not allowed to perform this operation. `error.code` is `FORBIDDEN`.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorEnvelope'
+          example:
+            success: false
+            data: null
+            error:
+              code: FORBIDDEN
+              message: Access to the resource is forbidden.
+              details: {}
+  headers:
+    XRateLimitLimit:
+      description: 'The configured request limit for the rate-limit category
 
-        and constrain the `data` property to their concrete shape.
+        (requests per 60-second window) that applied to this call.
 
-        Additional legacy keys (`status`, `log`, …) may appear alongside
+        The applicable category is the operation''s `x-rate-limit-category`.
 
-        `success`/`data` for backwards compatibility, and some legacy
+        Returned on every response (success and 429) so clients can
 
-        handlers omit `success`, so it is not marked required.
+        self-throttle. See the Rate limits guide for the default
+
+        per-category numbers.
 
         '
-      required:
-      - data
-      properties:
-        success:
-          type: boolean
-          description: '`true` on success (omitted by some legacy handlers).'
-        data:
-          type: object
-          description: Endpoint-specific payload.
-      additionalProperties: true
-    ErrorEnvelope:
-      type: object
-      description: 'Standard error envelope returned by every documented endpoint
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    XRateLimitReset:
+      description: Unix timestamp (seconds) when the current rate-limit window resets.
+      schema:
+        type: integer
+        format: int64
+        minimum: 0
+    RetryAfter:
+      description: Number of seconds the client should wait before retrying.
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
+    XRateLimitRemaining:
+      description: 'Approximate number of requests remaining in the current
 
-        (both in-Lambda and gateway-level errors). Additional legacy
-
-        keys may appear alongside `success`/`data`/`error` for
-
-        backwards compatibility.
-
-        '
-      required:
-      - success
-      - data
-      - error
-      properties:
-        success:
-          type: boolean
-          const: false
-          description: Always `false` on error.
-        data:
-          type:
-          - object
-          - 'null'
-          description: Always `null` on error.
-        error:
-          type: object
-          required:
-          - code
-          - message
-          description: Error description.
-          properties:
-            code:
-              $ref: '#/components/schemas/ErrorCode'
-            message:
-              type: string
-              description: Human-readable error description (English).
-            details:
-              type: object
-              description: Optional structured details (validation failures, downstream-service info, etc.).
-              additionalProperties: true
-      additionalProperties: true
-    ErrorCode:
-      type: string
-      description: 'Stable identifier for an error condition. Codes never change
-
-        meaning or HTTP status once published.
+        60-second window for this caller and category.
 
         '
-      enum:
-      - INVALID_API_KEY
-      - EXPIRED_API_KEY
-      - UNAUTHORIZED
-      - FORBIDDEN
-      - ENDPOINT_NOT_FOUND
-      - RESOURCE_NOT_FOUND
-      - NOT_FOUND
-      - METHOD_NOT_ALLOWED
-      - UNSUPPORTED_FILE_TYPE
-      - INVALID_INPUT
-      - UNPROCESSABLE_ENTITY
-      - RATE_LIMIT_EXCEEDED
-      - USAGE_LIMIT_EXCEEDED
-      - TOO_MANY_REQUESTS
-      - THROTTLED
-      - BAD_REQUEST
-      - INVALID_JSON
-      - MISSING_REQUIRED_FIELD
-      - MISSING_QUERY_PARAM
-      - MISSING_CALLBACK_ID
-      - MISSING_SLIDES_ARRAY
-      - MISSING_PROMPT
-      - MISSING_TEMPLATE_ID
-      - MISSING_FILE_CONTENT
-      - MISSING_SHARE_DETAILS
-      - INVALID_TYPE
-      - INVALID_DATA
-      - INVALID_DATA_TYPE
-      - INVALID_PAYLOAD
-      - INVALID_REQUEST
-      - API_REQUEST_FAILED
-      - FILE_UPLOAD_FAILED
-      - MAX_RETRIES_EXCEEDED
-      - EXTERNAL_SERVICE_ERROR
-      - INTERNAL_SERVER_ERROR
-      - SERVICE_UNAVAILABLE
-      - GATEWAY_TIMEOUT
-    FileAccessRequest:
-      type: object
-      description: Request body for `POST /api/v1/file-access`.
-      required:
-      - filePaths
-      properties:
-        filePaths:
-          type: array
-          description: List of stored file paths to mint tokens for.
-          minItems: 1
-          items:
-            type: string
-        source:
-          type: string
-          enum:
-          - betaimages
-          - magikarp
-          description: Storage backend source.
-      additionalProperties: true
+      schema:
+        type: integer
+        format: int32
+        minimum: 0
   securitySchemes:
     BearerAuth:
       type: http
